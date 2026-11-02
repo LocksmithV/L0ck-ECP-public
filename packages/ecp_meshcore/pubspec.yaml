@@ -1,0 +1,17 @@
+name: ecp_meshcore
+description: >-
+  PACE layer C for L0ck-ECP — the MeshCore companion protocol (BLE or USB serial) and a
+  Transport that carries ECP envelopes as binary channel datagrams. Pure Dart, no I/O.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  crypto: ^3.0.0
+  ecp_core:
+    path: ../ecp_core
+
+dev_dependencies:
+  test: ^1.25.0

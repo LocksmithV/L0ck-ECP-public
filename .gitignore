@@ -1,0 +1,38 @@
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+*.g.dart
+app.*.symbols
+app.*.map.json
+
+# IDE and OS
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+*.swp
+
+# Android
+.gradle/
+local.properties
+*.keystore
+*.jks
+key.properties
+*.class
+
+# SimpleX core (~190 MB), fetched by app/android/simplex/fetch-simplex.sh
+app/android/app/src/main/jniLibs/
+
+# Logs (logcat may contain device data), secrets, release copies
+*.log
+logs/
+.env
+releases/

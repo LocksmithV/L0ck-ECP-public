@@ -1,0 +1,816 @@
+{
+  "@@locale": "cs",
+  "aboutTitle": "O aplikaci",
+  "aboutTagline": "Platforma pro koordinaci v nouzi — šifrovaná komunikace přes více cest (PACE): SimpleX, Tor, LoRa, SMS a síť skupiny přes Bluetooth/Wi-Fi.",
+  "aboutVersion": "Verze {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutAuthor": "Autor",
+  "aboutWeb": "Web",
+  "aboutLicense": "Licence",
+  "aboutLicenseText": "GNU AGPLv3 — svobodný software; zdrojový kód je k dispozici podle licence.",
+  "aboutThirdParty": "Použité součásti",
+  "aboutThirdPartyText": "Briar/Bramble (GPLv3) · SimpleX Chat core (AGPLv3) · Tor (BSD) · MeshCore protokol (MIT) · ZXing (Apache 2.0) · SQLCipher (BSD) · libsodium (ISC) · Flutter (BSD)",
+  "aboutDisclaimer": "Upozornění",
+  "aboutDisclaimerText": "L0ck-ECP je nástroj pro bezpečnou komunikaci a koordinaci v nouzových situacích. Není určen k porušování zákonů ani k jiné nezákonné činnosti.\n\nUživatel sám odpovídá za to, že aplikaci používá v souladu s právními předpisy země, kde se nachází — mimo jiné o šifrování, elektronických komunikacích a rádiovém vysílání (kmitočty, výkon a střída vysílání LoRa).\n\nSoftware je poskytován „tak, jak je“, bez jakékoli záruky. Autor nenese odpovědnost za škody, ztrátu dat, nedoručené zprávy ani jiné následky použití aplikace. Nespoléhej na ni jako na jediný prostředek k přivolání pomoci.",
+  "openFailed": "Odkaz nejde otevřít (žádný prohlížeč).",
+  "wrongCode": "Nesprávný kód.",
+  "pin": "PIN",
+  "verifying": "Ověřuji…",
+  "retryIn": "Zkus znovu za {secs} s",
+  "@retryIn": {
+    "placeholders": {
+      "secs": {
+        "type": "int"
+      }
+    }
+  },
+  "unlock": "Odemknout",
+  "nicknameLength": "Přezdívka 1–24 znaků.",
+  "pinError": "PIN: {error}",
+  "@pinError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "pinMismatch": "PIN se neshoduje.",
+  "duressError": "Duress kód: {error}",
+  "@duressError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "duressMismatch": "Duress kód se neshoduje.",
+  "duressSameAsPin": "Duress kód musí být jiný než PIN.",
+  "setupFailed": "Nastavení selhalo: {error}",
+  "@setupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "firstRun": "První spuštění",
+  "nickname": "Přezdívka",
+  "pinDigits": "PIN (6–12 číslic)",
+  "pinAgain": "PIN znovu",
+  "duressCode": "Duress kód",
+  "duressExplain": "Pod nátlakem zadej místo PINu: otevře prázdný profil a skutečná data nevratně zničí.",
+  "duressDigits": "Duress kód (6–12 číslic)",
+  "duressAgain": "Duress kód znovu",
+  "generatingKeys": "Generuji klíče…",
+  "create": "Vytvořit",
+  "pinRuleEnter": "Zadej {min}–{max} číslic.",
+  "@pinRuleEnter": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "pinRuleDigits": "Jen číslice.",
+  "pinRuleMin": "Nejméně {min} číslic.",
+  "@pinRuleMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "pinRuleMax": "Nejvýše {max} číslic.",
+  "@pinRuleMax": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "currentCodeWrong": "Současný kód nesedí.",
+  "codeInUse": "Tento kód už se používá.",
+  "duressMustDiffer": "Duress kód se musí lišit od PINu.",
+  "enterNickname": "Zadej přezdívku.",
+  "duressWrong": "Duress kód nesedí.",
+  "newMessages": "Nové zprávy",
+  "directMessage": "přímá zpráva",
+  "team": "tým",
+  "contacts": "Kontakty",
+  "teams": "Týmy",
+  "loraRadio": "Rádio LoRa",
+  "settings": "Nastavení",
+  "identity": "Identita",
+  "fingerprint": "Otisk: {fp}",
+  "@fingerprint": {
+    "placeholders": {
+      "fp": {
+        "type": "String"
+      }
+    }
+  },
+  "smsNumber": "SMS číslo: {number}",
+  "@smsNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "notSet": "nenastaveno",
+  "channels": "Kanály",
+  "noChannel": "Žádný kanál",
+  "myContact": "Můj kontakt",
+  "copyMyLink": "Kopírovat můj odkaz",
+  "linkCopied": "Odkaz zkopírován. Po vložení schránku vymaž.",
+  "showInPersonOnly": "Ukazuj jen osobně.",
+  "contactsButton": "KONTAKTY ({count})",
+  "@contactsButton": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "add": "Přidat",
+  "noContactsYet": "Zatím žádné kontakty.",
+  "verifiedInPerson": "ověřeno osobně",
+  "notVerified": "neověřeno",
+  "openConversation": "Otevřít konverzaci",
+  "contactDetailMenu": "Detail: ověření, kanály, QR, Bluetooth, smazat",
+  "contactAndTeam": "{contact} a tým {team}",
+  "@contactAndTeam": {
+    "placeholders": {
+      "contact": {
+        "type": "String"
+      },
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "addContact": "Přidat kontakt",
+  "contactLinkLabel": "Odkaz kontaktu (l0ck://c/…)",
+  "contactUpdated": "Kontakt {name} aktualizován (nové kanály z karty).",
+  "@contactUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "load": "Načíst",
+  "scanQr": "Skenovat QR kontaktu nebo týmu",
+  "scanPrompt": "Namiř na QR druhého telefonu",
+  "joinedTeam": "Připojen k týmu {team}. Rádio LoRa přepnuto na kanál týmu.",
+  "@joinedTeam": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "verificationNumber": "Ověřovací číslo",
+  "verificationExplain": "Porovnej ho osobně s číslem na telefonu kontaktu. Shodné číslo znamená, že nikdo nepodstrčil cizí klíč.",
+  "numbersMatch": "Čísla se shodují (ověřeno osobně)",
+  "done": "Hotovo",
+  "contact": "Kontakt",
+  "reportsAndPosition": "Hlášení a poloha",
+  "message": "Zpráva",
+  "send": "Odeslat",
+  "renameContact": "Přejmenovat kontakt",
+  "cancel": "Zrušit",
+  "save": "Uložit",
+  "deleteContactQ": "Smazat {name}?",
+  "@deleteContactQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteContactText": "Smaže kontakt, jeho klíče a celou konverzaci. Nejde vrátit; pro nové spojení je třeba znovu naskenovat jeho QR.",
+  "delete": "Smazat",
+  "brambleNotRunning": "Bramble neběží.",
+  "needNearbyPermission": "Bez oprávnění „Zařízení v okolí“ to nejde.",
+  "makingVisible": "Zviditelňuji telefon…",
+  "noVisibility": "Bez viditelnosti se telefony nenajdou.",
+  "searchingBt": "Hledám kontakt přes Bluetooth (až 30 s)…",
+  "btConnected": "Spojeno přes Bluetooth. Příště se telefony najdou samy.",
+  "btNoUuid": "Kontakt ještě nebyl spojen jinou cestou (Tor/LAN) — zkus znovu později.",
+  "btNotFound": "Nenalezen. Ať kontakt současně udělá totéž, telefony blízko sebe.",
+  "btNotBramble": "Kontakt zatím není spojený přes Bramble.",
+  "btUnavailable": "Bluetooth v Bramble nenaběhl ({state}). Zkus vypnout a zapnout Bluetooth v telefonu.",
+  "@btUnavailable": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "unexpectedResult": "Nečekaný výsledek: {r}",
+  "@unexpectedResult": {
+    "placeholders": {
+      "r": {
+        "type": "String"
+      }
+    }
+  },
+  "rename": "Přejmenovat",
+  "verification": "Ověření",
+  "verifiedInPersonDot": "Ověřeno osobně.",
+  "notVerifiedExplain": "Neověřeno. Porovnej číslo s telefonem kontaktu — shodné číslo znamená, že nikdo nepodstrčil cizí klíč.",
+  "unverify": "Zrušit ověření",
+  "markVerified": "Čísla se shodují — označit ověřeno",
+  "missingOnCard": "chybí na kartě",
+  "connected": "spojeno",
+  "connecting": "spojuje se…",
+  "contactNoLink": "kontakt, teď bez spojení",
+  "linksNow": "teď: {links}",
+  "@linksNow": {
+    "placeholders": {
+      "links": {
+        "type": "String"
+      }
+    }
+  },
+  "noPhone": "číslo chybí",
+  "loraEveryone": "kanál ECP / týmu (všichni v dosahu)",
+  "connectBluetooth": "Spojit přes Bluetooth",
+  "connectBluetoothHelp": "Poprvé musí oba telefony zároveň: zviditelní se a najdou se. Pak už se přes Bluetooth spojují samy (i bez Wi-Fi a dat).",
+  "contactCard": "Karta kontaktu",
+  "theirCard": "Jeho veřejná karta — předávej jen s jeho souhlasem.",
+  "deleteContact": "Smazat kontakt",
+  "textCopied": "Text zkopírován.",
+  "sendViaSms": "Poslat přes SMS",
+  "via": "přes {via}",
+  "@via": {
+    "placeholders": {
+      "via": {
+        "type": "String"
+      }
+    }
+  },
+  "nobodyInRange": "nikdo v dosahu",
+  "sentTeam": "odesláno: {via}",
+  "@sentTeam": {
+    "placeholders": {
+      "via": {
+        "type": "String"
+      }
+    }
+  },
+  "stSending": "odesílám…",
+  "stSent": "odesláno přes {via}",
+  "@stSent": {
+    "placeholders": {
+      "via": {
+        "type": "String"
+      }
+    }
+  },
+  "stDelivered": "doručeno{at} · {via}",
+  "@stDelivered": {
+    "placeholders": {
+      "at": {
+        "type": "String"
+      },
+      "via": {
+        "type": "String"
+      }
+    }
+  },
+  "stRead": "přečteno{at}",
+  "@stRead": {
+    "placeholders": {
+      "at": {
+        "type": "String"
+      }
+    }
+  },
+  "stWaiting": "čeká na kanál",
+  "stConfirm": "jen SMS — potvrď",
+  "stFailed": "nedoručeno",
+  "squadNet": "síť skupiny",
+  "newTeam": "Nový tým",
+  "teamNameLocal": "Název (jen u tebe)",
+  "found": "Založit",
+  "teamDefaultName": "Tým",
+  "noTeams": "Zatím žádný tým.\n\nZaložit: „Nový tým“ a ukaž ostatním týmové QR.\nPřipojit se: v Kontaktech „Přidat“ a vlož odkaz z týmového QR člena.",
+  "teamId": "ID {id}",
+  "@teamId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "teamQrTitle": "Týmové QR — {team}",
+  "@teamQrTitle": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "teamQrWarning": "Ukazuj jen osobně a jen členům. Kdo QR vyfotí, čte týmovou komunikaci.",
+  "close": "Zavřít",
+  "leaveTeamQ": "Opustit {team}?",
+  "@leaveTeamQ": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveTeamText": "Členové dostanou zprávu, že odcházíš. Z tohoto telefonu zmizí tým, jeho zprávy i klíč; vrátit se jde jen novým naskenováním týmového QR.",
+  "leave": "Opustit",
+  "leaveTeamMenu": "Opustit a smazat tým",
+  "teamMembers": "Členové týmu",
+  "teamMembersHelp": "Zaškrtnutí dostanou týmové zprávy i přes SimpleX/Tor, když nejsou v dosahu rádia ani Bluetooth.",
+  "members": "Členové",
+  "teamQr": "Týmové QR",
+  "unknownSender": "neznámý {fp}",
+  "@unknownSender": {
+    "placeholders": {
+      "fp": {
+        "type": "String"
+      }
+    }
+  },
+  "teamMessage": "Zpráva týmu",
+  "noBtPermissionRadio": "Bez oprávnění Bluetooth se k rádiu nepřipojím.",
+  "commonEcpChannel": "Společný ECP kanál.",
+  "groupChannelSet": "Kanál skupiny nastaven.",
+  "radioRejectedChannel": "Rádio kanál nepřijalo: {e}",
+  "@radioRejectedChannel": {
+    "placeholders": {
+      "e": {
+        "type": "String"
+      }
+    }
+  },
+  "meshcoreRadioPaired": "Rádio MeshCore (spárované v nastavení Bluetooth)",
+  "noPairedDevice": "Žádné spárované zařízení. Spáruj rádio v nastavení Bluetooth (PIN z displeje rádia).",
+  "forgetRadio": "Odpojit a zapomenout rádio",
+  "loraUnavailable": "LoRa: nedostupné",
+  "firmwareInfo": "Firmware {version} · {channels} kanálů",
+  "@firmwareInfo": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "pathHash": " · hash cesty {bytes} B",
+  "@pathHash": {
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      }
+    }
+  },
+  "loraChannel": "Kanál LoRa",
+  "commonChannelHelp": "Společný ECP kanál. Veřejný a hashtag kanály aplikace ignoruje.",
+  "privateChannelHelp": "Soukromý kanál skupiny. Klíč sdílej jen osobně.",
+  "newGroupChannel": "Nový kanál skupiny",
+  "copyKey": "Kopírovat klíč",
+  "backToEcpChannel": "Zpět na ECP kanál",
+  "groupKeyPaste": "Klíč kanálu skupiny (vložit)",
+  "invalidChannelKey": "Neplatný klíč kanálu.",
+  "layerAlternate": "Tor / Bramble (i LAN a Bluetooth)",
+  "layerContingency": "LoRa (MeshCore)",
+  "cz": "Česko",
+  "sk": "Slovensko",
+  "pl": "Polsko",
+  "de": "Německo",
+  "at": "Rakousko",
+  "hu": "Maďarsko",
+  "ua": "Ukrajina",
+  "uk": "Spojené království",
+  "us": "USA / Kanada",
+  "numberRemoved": "Číslo odebráno.",
+  "numberSaved": "Uloženo. Kontakty dostanou nové číslo samy.",
+  "confirm": "Potvrdit",
+  "duressOptional": "Duress kód (nepovinné)",
+  "renameDecoyHelp": "S duress kódem se přejmenuje i prázdný profil, aby pod nátlakem ukázal stejné jméno.",
+  "nicknameChanged": "Přezdívka změněna.",
+  "changePin": "Změnit PIN",
+  "currentPin": "Současný PIN",
+  "newPin": "Nový PIN",
+  "newPinAgain": "Nový PIN znovu",
+  "newPinsMismatch": "Nové PINy se neshodují.",
+  "pinChanged": "PIN změněn.",
+  "removeDuress": "Zrušit duress kód",
+  "removeDuressNote": "Prázdný profil i s obsahem zmizí; pod nátlakem pak nebude kam uhnout.",
+  "newDuress": "Nový duress kód",
+  "newDuressAgain": "Nový duress kód znovu",
+  "newDuressNote": "Vznikne nový prázdný profil se stejnou přezdívkou; ten starý i s obsahem zmizí.",
+  "duressCodesMismatch": "Duress kódy se neshodují.",
+  "duressRemoved": "Duress kód zrušen.",
+  "duressSet": "Duress kód nastaven.",
+  "profile": "Profil",
+  "nicknameOnCard": "Přezdívka na tvé kartě",
+  "smsNumberLayer": "SMS číslo (vrstva E)",
+  "number": "Číslo",
+  "simChangeHelp": "Při změně SIM (místní operátor) zadej nové číslo: QR se obnoví a kontakty ho dostanou automaticky. Prázdné pole číslo odebere.",
+  "saveNumber": "ULOŽIT ČÍSLO",
+  "paceOrder": "Pořadí kanálů (PACE)",
+  "paceOrderHelp": "Zpráva jde nejdřív prvním dostupným kanálem shora; bez potvrzení v limitu zkusí další. Přetáhni za ≡. SMS se vždy posílá jen po potvrzení (nebo v nouzi).",
+  "paceDefault": "Výchozí pořadí (SimpleX → Tor → LoRa → SMS)",
+  "security": "Zabezpečení",
+  "pinNotStored": "PIN ani duress kód aplikace neukládá, proto je nejde zobrazit — jen změnit. Zapomenutý PIN nejde obnovit.",
+  "setNewDuress": "Nastavit nový duress kód",
+  "emergencyLock": "Nouzové zamknutí",
+  "emergencyLockHelp": "{taps}× rychle klepni kamkoli na obrazovku: aplikace se okamžitě zamkne a skryje. Zprávy dál chodí na pozadí.",
+  "@emergencyLockHelp": {
+    "placeholders": {
+      "taps": {
+        "type": "int"
+      }
+    }
+  },
+  "lockAndHide": "ZAMKNOUT A SKRÝT",
+  "reconnect": "Obnovit spojení",
+  "reconnectOne": "Obnovit {channel}",
+  "@reconnectOne": {
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "reconnectAll": "Obnovit vše",
+  "loraRadioShort": "LoRa rádio",
+  "language": "Jazyk",
+  "about": "O aplikaci",
+  "stOk": "V pořádku",
+  "stNeedHelp": "Potřebuji pomoc",
+  "stCompromised": "Kompromitován",
+  "stInjured": "Zraněn",
+  "stMoving": "V pohybu",
+  "stInPosition": "Na místě",
+  "sitrepStates": "Klid|Pozor / sledování|Kontakt|Nouze",
+  "medevacPrecedence": "A urgentní|B urgentní-chirurgický|C prioritní|D rutinní|E odložitelný",
+  "medevacEquipment": "žádné|naviják|vyprošťovací technika|ventilátor",
+  "medevacSecurity": "bez nepřítele|možný nepřítel|nepřítel v oblasti|nepřítel, nutný doprovod",
+  "medevacMarking": "panely|pyrotechnika|kouř|žádné|jiné",
+  "medevacNationality": "vlastní voják|vlastní civilista|cizí voják|cizí civilista|zajatec",
+  "medevacTerrain": "bez kontaminace|jaderná (N)|biologická (B)|chemická (C)",
+  "rPosition": "POLOHA",
+  "rStatus": "STATUS",
+  "rRally": "SRAZ",
+  "rSitrep": "SITREP",
+  "rMedevac": "MEDEVAC 9-line",
+  "rSalter": "SALTER",
+  "r5w": "5W",
+  "timeLine": "Čas: {t}",
+  "@timeLine": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
+  "personsLine": "Osob: {n}",
+  "@personsLine": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "mLine2": "2 volací znak: {v}",
+  "@mLine2": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "mLine3": "3 pacienti: {v}",
+  "@mLine3": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "mLine4": "4 vybavení: {v}",
+  "@mLine4": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "mLine5": "5 nosítka {l}, chodící {a}",
+  "@mLine5": {
+    "placeholders": {
+      "l": {
+        "type": "int"
+      },
+      "a": {
+        "type": "int"
+      }
+    }
+  },
+  "mLine6": "6 bezpečnost: {v}",
+  "@mLine6": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "mLine7": "7 značení: {v}",
+  "@mLine7": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "mLine8": "8 národnost: {v}",
+  "@mLine8": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "mLine9": "9 terén/NBC: {v}",
+  "@mLine9": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "sSize": "S velikost: {v}",
+  "@sSize": {
+    "placeholders": {
+      "v": {
+        "type": "int"
+      }
+    }
+  },
+  "sActivity": "A činnost: {v}",
+  "@sActivity": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "sTime": "T čas: {v}",
+  "@sTime": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "sEquipment": "E vybavení: {v}",
+  "@sEquipment": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "sRemarks": "R poznámky: {v}",
+  "@sRemarks": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "wWho": "Kdo: {v}",
+  "@wWho": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "wWhat": "Co: {v}",
+  "@wWhat": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "wWhen": "Kdy: {v}",
+  "@wWhen": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "wWhy": "Proč: {v}",
+  "@wWhy": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "reportUnreadable": "(hlášení nejde přečíst)",
+  "accuracy": "přesnost ±{m} m",
+  "@accuracy": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "distanceFindMe": "Vzdálenost a směr: zjistit mou polohu",
+  "distanceBearing": "{d} · azimut {b}",
+  "@distanceBearing": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "map": "Mapa",
+  "noMapApp": "Žádná mapová aplikace. Doporučuji OsmAnd nebo Organic Maps z F-Droidu (offline).",
+  "coordinates": "Souřadnice",
+  "coordsCopied": "Souřadnice zkopírovány.",
+  "persons": "osob",
+  "reports": "HLÁŠENÍ",
+  "myPosition": "Moje poloha",
+  "statusSub": "v pořádku, pomoc, zraněn…",
+  "rallySub": "místo a čas setkání",
+  "sitrepSub": "stav, počet osob, krátký text",
+  "salterSub": "pozorování: velikost, činnost, místo, čas, vybavení, poznámky",
+  "fiveWSub": "kdo, co, kde, kdy, proč",
+  "positionCaps": "POLOHA",
+  "gettingGps": "Získávám polohu z GPS…",
+  "coordsLabel": "Souřadnice (např. 50.0880, 14.4208)",
+  "coordsNotUnderstood": "Nerozumím souřadnicím.",
+  "myPositionGps": "Moje poloha (GPS)",
+  "enterManually": "Zadat ručně",
+  "sendCaps": "ODESLAT",
+  "attachPosition": "Přiložit polohu",
+  "rallyTime": "Čas srazu: {t}",
+  "@rallyTime": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
+  "inMinutes": "za {n} min",
+  "@inMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "inHours": "za {n} h",
+  "@inHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dateAndTime": "datum a čas",
+  "stateCaps": "STAV",
+  "personCount": "Počet osob",
+  "shortText": "Krátký text",
+  "tooLongSms": "Moc dlouhé — musí se vejít do jedné SMS.",
+  "tooLongLora": "Texty dohromady moc dlouhé — musí se vejít do jednoho LoRa paketu.",
+  "pickupSite": "1  MÍSTO VYZVEDNUTÍ",
+  "callsignLabel": "2  Volací znak (max. 8 znaků bez diakritiky)",
+  "callsignError": "Max. 8 znaků, bez diakritiky.",
+  "patientsCaps": "3  PACIENTI PODLE NALÉHAVOSTI",
+  "line4": "4  Zvláštní vybavení",
+  "line5Litter": "5  Na nosítkách",
+  "line5Ambulatory": "5  Chodící",
+  "line6": "6  Bezpečnost místa",
+  "line7": "7  Značení místa",
+  "line8": "8  Národnost / status",
+  "line9": "9  Terén / kontaminace",
+  "salterSize": "S  Velikost (počet osob, vozidel…)",
+  "salterActivity": "A  Činnost",
+  "salterLocation": "L  MÍSTO",
+  "salterTime": "T  Čas pozorování: {t}",
+  "@salterTime": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
+  "salterEquipment": "E  Vybavení / výzbroj",
+  "salterRemarks": "R  Poznámky",
+  "fwWho": "Kdo",
+  "fwWhat": "Co",
+  "fwWhere": "KDE",
+  "fwWhen": "Kdy: {t}",
+  "@fwWhen": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
+  "fwWhy": "Proč",
+  "now": "teď",
+  "textBudget": "{n} / {max} B",
+  "@textBudget": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "stSimplex": "SimpleX: {s}",
+  "@stSimplex": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
+  "active": "aktivní",
+  "unavailable": "nedostupné",
+  "stBramble": "Bramble: {s}",
+  "@stBramble": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
+  "waitingNetwork": "čeká na síť",
+  "stSquad": "Síť skupiny: {n} v dosahu",
+  "@stSquad": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "smsNoSim": "SMS: bez SIM",
+  "smsNotAllowed": "SMS: nepovoleno",
+  "smsReady": "SMS: připraveno (jen po potvrzení)",
+  "loraNotConnected": "LoRa: rádio nepřipojeno",
+  "loraError": "LoRa: chyba rádia",
+  "locNoPermission": "Bez oprávnění k poloze.",
+  "locOff": "Poloha je v telefonu vypnutá.",
+  "locTimeout": "GPS zatím nemá fix — zkus venku nebo zadej souřadnice.",
+  "locFailed": "Polohu se nepodařilo zjistit.",
+  "invalidContactLink": "Neplatný odkaz kontaktu.",
+  "ownContact": "To je tvůj vlastní kontakt.",
+  "teamOf": "Tým {name}",
+  "@teamOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rcConnectingRelays": "připojuji k relé",
+  "rcError": "chyba",
+  "rcNotRunning": "neběží",
+  "rcRunning": "běží",
+  "rcStarting": "startuje",
+  "rcBtInactive": "neaktivní (zapni Bluetooth)",
+  "rcBrambleNotRunning": "Bramble neběží",
+  "rcNoRadio": "bez rádia",
+  "rcConnectingRadio": "připojuji rádio",
+  "stLora": "LoRa: {s}",
+  "@stLora": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  }
+}

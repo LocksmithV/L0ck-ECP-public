@@ -1,0 +1,47 @@
+name: l0ck_ecp
+description: "L0ck-ECP — encrypted emergency coordination over several channels (PACE)."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  cryptography: ^2.9.0
+  drift: ^2.35.3
+  ecp_core:
+    path: ../packages/ecp_core
+  ecp_meshcore:
+    path: ../packages/ecp_meshcore
+  ecp_simplex:
+    path: ../packages/ecp_simplex
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  qr_flutter: ^4.1.0
+  sodium: ^4.1.2+1
+  sqlite3: ^3.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.35.2
+  build_runner: ^2.17.1
+
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - assets/images/logo.jpg
+    - assets/images/top-logo.jpg
+
+# SQLCipher instead of plain SQLite: every profile database is encrypted (docs/ARCHITECTURE_V2.md §6)
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlcipher

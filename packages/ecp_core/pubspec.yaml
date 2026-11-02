@@ -1,0 +1,15 @@
+name: ecp_core
+description: >-
+  L0ck-ECP core — identity keys, the ECP envelope, compact message formats, contact
+  cards and PIN-protected key slots. Pure Dart, no Flutter, so it is testable on its own.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  cryptography: ^2.7.0
+
+dev_dependencies:
+  test: ^1.25.0

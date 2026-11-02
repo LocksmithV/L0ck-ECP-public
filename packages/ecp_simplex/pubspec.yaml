@@ -1,0 +1,19 @@
+name: ecp_simplex
+description: >-
+  PACE layer P for L0ck-ECP — ECP envelopes over SimpleX Chat. The transport logic is pure
+  Dart against an abstract API; ffi.dart drives libsimplex.so (phone), ws.dart the
+  simplex-chat CLI's WebSocket server (laptop).
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  crypto: ^3.0.0
+  ecp_core:
+    path: ../ecp_core
+  ffi: ^2.1.0
+
+dev_dependencies:
+  test: ^1.25.0

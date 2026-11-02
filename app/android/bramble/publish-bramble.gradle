@@ -1,0 +1,22 @@
+// Gradle init script: publishes Briar's core modules (Bramble) from an upstream Briar checkout
+// to a local Maven repository, so the app can use them without merging the two builds (Briar
+// pins its own Android Gradle Plugin). Used by build-bramble.sh. GPLv3 code, linked as is.
+def repoDir = System.getenv('BRAMBLE_M2') ?: "${System.getProperty('user.home')}/.l0ck-ecp-toolchain/m2"
+def modules = ['bramble-api', 'bramble-core', 'bramble-android', 'bramble-java']
+
+allprojects { p ->
+	if (!(p.name in modules)) return
+	p.group = 'org.briarproject.l0ck'
+	p.version = System.getenv('BRAMBLE_VERSION') ?: '1.5.24'
+	p.apply plugin: 'maven-publish'
+
+	p.plugins.withId('com.android.library') {
+		p.android.publishing { singleVariant('release') }
+	}
+	p.publishing.repositories { maven { url = p.uri(repoDir) } }
+	// AGP creates its 'release' component late, so publish whichever component appears
+	def wanted = { it.name in ['release', 'java'] }
+	p.components.matching(wanted).all { c ->
+		p.publishing.publications.create('bramble', MavenPublication) { from c }
+	}
+}

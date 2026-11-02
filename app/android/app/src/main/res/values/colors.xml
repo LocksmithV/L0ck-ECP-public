@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- L0ck palette background (app/lib/ui/theme.dart L0ckColors.bg) -->
+    <color name="ic_launcher_background">#0A0C09</color>
+    <color name="l0ck_bg">#0A0C09</color>
+</resources>

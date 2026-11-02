@@ -1,0 +1,14 @@
+name: ecp_peer
+description: Laptop test node for L0ck-ECP — ecp_core's PACE router over a bramble-peer process.
+publish_to: none
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  ecp_core:
+    path: ../../packages/ecp_core
+  ecp_meshcore:
+    path: ../../packages/ecp_meshcore
+  ecp_simplex:
+    path: ../../packages/ecp_simplex
