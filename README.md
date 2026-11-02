@@ -1,5 +1,126 @@
 # L0ck-ECP — Emergency Coordination Platform
 
+![L0ck-ECP](docs/images/L0ck-ECP_background.png)
+
+**[English](#english)** · **[Česky](#česky)**
+
+## English
+
+> **Status: testing.** The app works and has been tested on two phones, but this is a test
+> build, not a stable release. Message formats may still change and the APK is signed with
+> a development key.
+
+An encrypted messenger and coordination tool for Android, built for small teams when
+regular networks fail or are not available: internet and mobile outages, natural
+disasters, remote areas, field events, volunteer and rescue teams.
+
+### Download
+
+The test build **L0ck-ECP_v1.apk** is under [Releases](../../releases) (Android 8.0+,
+arm64), with its SHA-256 checksum.
+
+### One message, several paths (PACE)
+
+Every message is one encrypted ECP envelope. The app sends it over the first path that
+works and, when no acknowledgement comes back, tries the next one by itself. The order
+can be changed in the settings.
+
+| Layer | Channel | When it helps |
+|---|---|---|
+| **P** — Primary | [SimpleX](https://simplex.chat/) — relays without user identifiers | regular internet |
+| **A** — Alternate | Bramble (the transport layer of [Briar](https://briarproject.org/)) — Tor, local Wi-Fi, Bluetooth | limited internet, phones close to each other |
+| **C** — Contingency | LoRa via a [MeshCore](https://meshcore.io) radio (companion, e.g. Heltec V3 over Bluetooth) | no internet and no mobile network, kilometres of range, also through nearby repeaters |
+| **E** — Emergency | SMS, always only after the user confirms | mobile network only |
+
+Messages without a connection wait in a queue and go out by themselves. Each message shows
+its time, delivery and read state. Public MeshCore channels are ignored.
+
+### Features
+
+- **Contacts** are added by scanning a QR code in person (verified) or by a link; a change
+  of the own phone number (e.g. a local SIM) reaches the contacts automatically.
+- **Teams:** create and join with a team QR code, team conversation, a local squad net over
+  Wi-Fi/Bluetooth, a private LoRa channel, delivery to members out of range as well.
+- **Standardised reports:** position, STATUS, RALLY (place and time), SITREP, MEDEVAC
+  9-line, SALTER (observation), 5W (who, what, where, when, why). Compact — each fits one
+  LoRa packet and at most two SMS. GPS position without Google services; the receiver sees
+  the coordinates, distance and bearing, and can open the point in an offline map
+  (OsmAnd, Organic Maps).
+- **Security:** end-to-end encryption, encrypted storage (SQLCipher) protected by a PIN
+  (Argon2id, key bound to the device), duress code, screen protection, notifications
+  without content, emergency lock by four quick taps. No accounts, no sign-up.
+- **Operation:** runs in the background and with the screen locked; per-channel reconnect
+  in the settings; Czech and English.
+
+### Limitations
+
+LoRa has little bandwidth (short messages and reports). SMS exposes metadata to the
+operator. Tor adds latency, Bluetooth reaches tens of metres. The tool needs preparation
+and practice before it is relied on, and it **does not replace emergency numbers (112)**
+or official rescue services.
+
+### Repository layout
+
+| Path | Contents |
+|---|---|
+| `app/` | the app (Flutter, package `cz.l0ck.ecp`) |
+| `packages/ecp_core/` | ECP envelope, cryptography, contact card, reports, PACE router (pure Dart) |
+| `packages/ecp_meshcore/` | MeshCore companion protocol |
+| `packages/ecp_simplex/` | binding to the SimpleX core (FFI / WebSocket) |
+| `tools/` | laptop test nodes (`ecp_peer`, `bramble-peer`) |
+| `docs/ARCHITECTURE_V2.md` | design, message formats, implementation status, open questions (Czech) |
+
+### Building
+
+Requires Flutter 3.47+, JDK 17, Android SDK and NDK 28.
+
+```bash
+app/android/bramble/build-bramble.sh      # Bramble from Briar 1.5.24 into a local Maven repo
+app/android/simplex/fetch-simplex.sh      # libsimplex.so from the official SimpleX v7.0.3 APK (verified)
+cd app && dart run build_runner build      # generates database.g.dart (drift)
+flutter build apk --release --target-platform android-arm64
+```
+
+The scripts keep tools and downloads in `~/.l0ck-ecp-toolchain/` (override with
+`BRIAR_SRC`, `BRAMBLE_M2`, `SIMPLEX_DL`).
+
+Tests: `cd packages/ecp_core && dart test`, `cd app && flutter test`.
+
+### License
+
+L0ck-ECP is free software under the **GNU Affero General Public License v3.0**
+([LICENSE](LICENSE)). Whoever distributes the app, or runs a modified version of it,
+must make its source code available too.
+
+Components and their licenses:
+
+| Component | License |
+|---|---|
+| [Briar / Bramble](https://code.briarproject.org/briar/briar) 1.5.24 | GPLv3 |
+| [SimpleX Chat](https://github.com/simplex-chat/simplex-chat) core 7.0.3 | AGPLv3 |
+| [ZXing Android Embedded](https://github.com/journeyapps/zxing-android-embedded) | Apache 2.0 |
+| [SQLCipher](https://www.zetetic.net/sqlcipher/) (via `sqlite3`) | BSD-style |
+| [libsodium](https://libsodium.org) (via `sodium`) | ISC |
+| [Flutter](https://flutter.dev), [drift](https://drift.simonbinder.eu), `cryptography` | BSD / MIT / Apache 2.0 |
+
+The MeshCore companion protocol is implemented in `packages/ecp_meshcore`; the
+[MeshCore](https://meshcore.io) firmware runs on the radio and is not part of the app.
+
+### Disclaimer
+
+The app is intended for lawful use. It is not meant for breaking the laws of the country
+where it is used. The author bears no responsibility for how it is used or for any damage
+resulting from its use. The software is provided "as is", without warranty.
+
+### Author
+
+L0ckSm1thV — [GitHub](https://github.com/LocksmithV) ·
+[l0cksm1thv.duckdns.org](https://l0cksm1thv.duckdns.org)
+
+---
+
+## Česky
+
 > **Stav: testování.** Aplikace je funkční a ověřená na dvou telefonech, ale jde o testovací
 > sestavení, ne o stabilní vydání. Formáty zpráv se ještě mohou změnit a APK je podepsané
 > vývojovým klíčem.
@@ -8,17 +129,12 @@
 kdy běžná síť selhává nebo není k dispozici: výpadky internetu a mobilní sítě, živelní
 pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
-*English: L0ck-ECP is an encrypted messaging and coordination app for small teams when
-regular networks are unreliable or down. One encrypted message, several paths — SimpleX,
-Tor/Wi-Fi/Bluetooth, LoRa radio and SMS — with automatic fallback, team channels and
-standardised compact reports with GPS position. Czech and English UI. Currently in testing.*
-
-## Stažení
+### Stažení
 
 Testovací sestavení **L0ck-ECP_v1.apk** je v [Releases](../../releases) (Android 8.0+,
 arm64). Kontrolní součet SHA-256 je u vydání.
 
-## Jedna zpráva, víc cest (PACE)
+### Jedna zpráva, víc cest (PACE)
 
 Každá zpráva je jedna šifrovaná obálka ECP; aplikace ji pošle první cestou, která funguje,
 a když nepřijde potvrzení, sama zkusí další. Pořadí jde v nastavení změnit.
@@ -33,7 +149,7 @@ a když nepřijde potvrzení, sama zkusí další. Pořadí jde v nastavení zm�
 Zprávy bez spojení čekají ve frontě a odejdou samy. U zpráv je čas, doručení a přečtení.
 Veřejné kanály MeshCore aplikace ignoruje.
 
-## Co aplikace umí
+### Co aplikace umí
 
 - **Kontakty** se přidávají skenem QR osobně (ověření) nebo odkazem; změna vlastního
   telefonního čísla (např. místní SIM) se kontaktům rozešle sama.
@@ -49,14 +165,14 @@ Veřejné kanály MeshCore aplikace ignoruje.
 - **Provoz:** běží na pozadí i se zamčenou obrazovkou; obnovení jednotlivých kanálů
   v nastavení; čeština a angličtina.
 
-## Omezení
+### Omezení
 
 LoRa má malou propustnost (krátké zprávy a hlášení). SMS prozrazuje operátorovi metadata.
 Tor přidává zpoždění, Bluetooth má dosah desítek metrů. Nástroj vyžaduje přípravu
 a nácvik před nasazením a **nenahrazuje tísňové linky (112)** ani oficiální záchranné
 složky.
 
-## Struktura repozitáře
+### Struktura repozitáře
 
 | Cesta | Obsah |
 |---|---|
@@ -67,7 +183,7 @@ složky.
 | `tools/` | testovací uzly pro laptop (`ecp_peer`, `bramble-peer`) |
 | `docs/ARCHITECTURE_V2.md` | návrh, formáty zpráv, stav implementace, otevřené otázky |
 
-## Sestavení
+### Sestavení
 
 Potřeba: Flutter 3.47+, JDK 17, Android SDK a NDK 28.
 
@@ -83,7 +199,7 @@ proměnné `BRIAR_SRC`, `BRAMBLE_M2`, `SIMPLEX_DL`).
 
 Testy: `cd packages/ecp_core && dart test`, `cd app && flutter test`.
 
-## Licence
+### Licence
 
 L0ck-ECP je svobodný software pod licencí **GNU Affero General Public License v3.0**
 ([LICENSE](LICENSE)). Kdo aplikaci šíří nebo provozuje upravenou, musí zpřístupnit i její
@@ -103,13 +219,8 @@ Použité komponenty a jejich licence:
 Protokol companion rádia MeshCore je implementovaný v `packages/ecp_meshcore`; firmware
 [MeshCore](https://meshcore.io) běží v rádiu a není součástí aplikace.
 
-## Upozornění
+### Upozornění
 
 Aplikace je určená k zákonnému použití. Není určená k porušování zákonů země, kde se
 používá. Autor nenese odpovědnost za způsob jejího použití ani za škody z něj vzniklé.
 Software je poskytován „tak, jak je“, bez záruky.
-
-## Autor
-
-L0ckSm1thV — [GitHub](https://github.com/LocksmithV) ·
-[l0cksm1thv.duckdns.org](https://l0cksm1thv.duckdns.org)
