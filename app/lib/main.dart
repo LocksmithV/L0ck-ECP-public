@@ -17,6 +17,7 @@ import 'platform/radio.dart';
 import 'platform/sms.dart';
 import 'platform/keystore.dart';
 import 'platform/location.dart';
+import 'platform/lock_hold.dart';
 import 'platform/net.dart';
 import 'platform/notify.dart';
 import 'security/lock_config.dart';
@@ -79,6 +80,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   // Locking after a delay (settings), and when a fingerprint may stand in for the PIN
   Timer? _autoLock;
   DateTime? _pausedAt, _pinAt;
+  Duration? _pausedFor;
   bool _biometricBlocked = false;
 
   @override
@@ -149,19 +151,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final m = _messaging;
     if (_stage != _Stage.unlocked || m == null) return;
-    final after = m.lock.after; // null: only by hand
+    var after = m.lock.after; // null: only by hand
     if (state == AppLifecycleState.paused) {
+      // The own QR scanner in front is not leaving the app; it locks only if it stays long
+      if (after != null && LockHold.active && after < LockHold.limit) after = LockHold.limit;
       if (after == Duration.zero) return _lock();
       m.inForeground = false; // still unlocked, but new messages are announced again
       _pausedAt = DateTime.now();
+      _pausedFor = after;
       _autoLock?.cancel();
       if (after != null) _autoLock = Timer(after, _lock);
     } else if (state == AppLifecycleState.resumed && _pausedAt != null) {
       _autoLock?.cancel();
       final away = DateTime.now().difference(_pausedAt!);
+      final limit = _pausedFor;
       _pausedAt = null;
       // The timer may not have run while the app was in the background
-      if (after != null && away >= after) return _lock();
+      if (limit != null && away >= limit) return _lock();
       _inView();
     }
   }

@@ -1450,4 +1450,19 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get factoryResetConfirm => 'SMAZAT VŠE';
+
+  @override
+  String groupWorking(int done, int total) {
+    return 'Nastavuji… kontakty $done z $total';
+  }
+
+  @override
+  String groupFailed(String error) {
+    return 'Nastavení se nepovedlo: $error';
+  }
+
+  @override
+  String groupOwnPhone(String phone) {
+    return 'Tvoje číslo pro SMS: $phone';
+  }
 }

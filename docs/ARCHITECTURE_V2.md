@@ -420,6 +420,15 @@ Balíček nese klíče všech týmů, proto jen osobně na základně; stránka 
 `connect-src 'none'`. Shodu formátu hlídá test: `tools/ecp_base/test/bundle_test.js` píše
 fixture, kterou dekóduje `group_bundle_test.dart`.
 
+**Základna a balíček, opravy (0.1.3–0.1.4):** skener QR je v aplikaci samostatná aktivita
+Androidu, takže aplikace odešla do pozadí a se zamykáním „ihned“ se uprostřed načítání
+balíčku zamkla. Teď skener a dialog viditelnosti Bluetooth drží `LockHold`: zamkne se až po
+2 min. Nastavení z balíčku ukazuje průběh, chybu nespolkne (žádná nekonečná lišta),
+přepnutí rádia LoRa i `contactsChanged` kanálů mají časový limit. Číslo, které základna
+doplnila do vlastní karty telefonu, se stane vlastním číslem pro SMS. Stránka základny:
+zaměřovací čtverec, stav HLEDÁM QR / NAČTENO se zvukem, přidání až po potvrzení, úprava
+jména a čísla (karta se přepíše jen v těchto dvou polích), QR karty člena.
+
 **Tovární nastavení (0.1.2):** Nastavení → Aplikace → *Obnovit tovární nastavení*. Tlačítko
 jen otevře dialog, smaže až jeho červené potvrzení: stejně jako po 10 chybných PINech
 (`SecurityService.wipeAll`) zničí oba sloty, klíč v Keystore, všechny databáze a data Bramble

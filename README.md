@@ -16,7 +16,7 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The current test build **L0ck-ECP_v0.1.2.apk** is under [Releases](../../releases)
+The current test build **L0ck-ECP_v0.1.4.apk** is under [Releases](../../releases)
 (Android 8.0+, arm64), with its SHA-256 checksum.
 
 ### One message, several paths (PACE)
@@ -51,8 +51,10 @@ its time, delivery and read state. Public MeshCore channels are ignored.
 - **Group setup at the base:** an offline page on a laptop (`tools/ecp_base`) scans every
   phone's contact QR, creates the teams and shows one group bundle as a series of QR
   codes; each phone scans it and gets every contact (verified), its teams, the team's
-  LoRa channel and the PACE order. One scan per phone instead of everyone scanning
-  everyone.
+  LoRa channel, the PACE order and its own SMS number if the base filled it in. One scan
+  per phone instead of everyone scanning everyone. See
+  [tools/ecp_base/README.md](tools/ecp_base/README.md); also as `L0ck-ECP-Base.zip` under
+  Releases.
 - **PANIC and COMPROMISED** on the PIN screen, without the PIN, while the app runs: PANIC
   sends the configured status, position and text to contacts and teams over every channel
   at once; COMPROMISED (with a confirmation elsewhere on the screen) reports "compromised"
@@ -148,7 +150,7 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Aktuální testovací sestavení **L0ck-ECP_v0.1.2.apk** je v [Releases](../../releases)
+Aktuální testovací sestavení **L0ck-ECP_v0.1.4.apk** je v [Releases](../../releases)
 (Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání.
 
 ### Jedna zpráva, víc cest (PACE)
@@ -181,7 +183,10 @@ Veřejné kanály MeshCore aplikace ignoruje.
 - **Hromadné nastavení na základně:** offline stránka na notebooku (`tools/ecp_base`)
   načte kontaktní QR všech telefonů, založí týmy a ukáže jeden balíček skupiny jako sérii
   QR kódů; každý telefon ho načte a dostane všechny kontakty (ověřené), svoje týmy, kanál
-  LoRa týmu a pořadí PACE. Jedno skenování na telefon místo skenování každý s každým.
+  LoRa týmu, pořadí PACE a vlastní číslo pro SMS, pokud ho základna doplnila. Jedno
+  skenování na telefon místo skenování každý s každým. Viz
+  [tools/ecp_base/README.md](tools/ecp_base/README.md); také jako `L0ck-ECP-Base.zip`
+  v Releases.
 - **PANIC a KOMPROMITOVÁN** na obrazovce PINu, bez PINu, dokud aplikace běží: PANIC pošle
   nastavený stav, polohu a text kontaktům a týmům všemi kanály najednou; KOMPROMITOVÁN
   (s potvrzením na jiném místě obrazovky) ohlásí kompromitaci a zničí profil jako duress

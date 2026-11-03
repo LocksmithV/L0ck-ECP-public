@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../l10n/lang.dart';
 import '../messaging/messaging_service.dart';
+import '../messaging/sms_transport.dart';
+import '../platform/radio.dart' show Permissions;
 import '../platform/scanner.dart';
 import 'settings_screen.dart' show layerName;
 import 'theme.dart';
@@ -28,7 +30,7 @@ class GroupImportScreen extends StatefulWidget {
 class _GroupImportScreenState extends State<GroupImportScreen> {
   var _parts = GroupBundleAssembler();
   GroupBundle? _bundle;
-  String? _error, _done;
+  String? _error, _done, _progress;
   bool _busy = false;
 
   @override
@@ -70,17 +72,40 @@ class _GroupImportScreenState extends State<GroupImportScreen> {
   Future<void> _apply() async {
     final b = _bundle!;
     final l = context.l;
-    setState(() => _busy = true);
-    final r = await widget.messaging.importGroup(b);
-    if (!mounted) return;
     setState(() {
-      _busy = false;
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final r = await widget.messaging.importGroup(b, progress: (done, total) {
+        if (mounted) setState(() => _progress = l.groupWorking(done, total));
+      });
+      if (!mounted) return;
       if (r == null) {
         _error = l.groupNotMember;
       } else {
         _done = l.groupDone(r.contacts, r.teams.length);
+        if (r.phone != null) {
+          // As in the settings: layer E needs the SMS permissions and a fresh look at the SIM
+          try {
+            await Permissions.request(const ['android.permission.SEND_SMS', 'android.permission.RECEIVE_SMS']);
+            await widget.messaging.transport<SmsTransport>()?.refresh();
+          } catch (_) {
+            // The number is set; SMS comes once allowed (settings)
+          }
+        }
       }
-    });
+    } catch (e) {
+      // Whatever went wrong is shown; the button stays for another try
+      _error = l.groupFailed('$e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _progress = null;
+        });
+      }
+    }
   }
 
   void _restart() => setState(() {
@@ -112,6 +137,11 @@ class _GroupImportScreenState extends State<GroupImportScreen> {
       ),
       if (lora != null && mine.any((e) => e.$1 == lora))
         Text(l.groupLora(b.teams[lora].name), style: const TextStyle(color: L0ckColors.text)),
+      if (widget.messaging.ownPhoneFrom(b) case final phone?)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(l.groupOwnPhone(phone), style: const TextStyle(color: L0ckColors.text)),
+        ),
       if (b.pace != null)
         Padding(
           padding: const EdgeInsets.only(top: 6),
@@ -140,6 +170,11 @@ class _GroupImportScreenState extends State<GroupImportScreen> {
       appBar: AppBar(title: Text(l.groupBundle)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         if (_busy) const LinearProgressIndicator(),
+        if (_progress != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Text(_progress!, key: const Key('group-working'), style: const TextStyle(color: L0ckColors.orange)),
+          ),
         if (b == null) ...[
           Text(l.groupHelp, style: const TextStyle(color: L0ckColors.text)),
           const SizedBox(height: 16),

@@ -10,6 +10,7 @@
   const MAGIC = 0x47; // 'G'
   const VERSION = 1;
   const MAX_TEAM_NAME = 40;
+  const MAX_NAME = 24; // ContactCard.maxName
   const utf8 = new TextEncoder();
 
   function b64urlDecode(s) {
@@ -43,7 +44,7 @@
       throw new Error('bad-card');
     }
     if (bytes[0] !== CARD_VERSION) throw new Error('bad-card');
-    const fields = new Map();
+    const fields = new Map(); // in card order, kept for re-encoding (withNameAndPhone)
     let i = 1;
     while (i < bytes.length) {
       if (i + 3 > bytes.length) throw new Error('bad-card');
@@ -60,10 +61,30 @@
     const phone = fields.get(0x05);
     return {
       bytes,
+      fields,
       name: new TextDecoder().decode(name),
       key: hex(key),
       phone: phone ? new TextDecoder().decode(phone) : null,
     };
+  }
+
+  /**
+   * The same card with another name and phone number (empty phone: none), as the base
+   * corrects them before the bundle; every other field stays as the phone made it.
+   */
+  function withNameAndPhone(card, name, phone) {
+    const n = utf8.encode(String(name).trim());
+    if (n.length < 1 || n.length > MAX_NAME) throw new Error('name');
+    const p = String(phone || '').trim().replace(/\s+/g, ' ');
+    if (p && !/^\+?[0-9 ]{3,20}$/.test(p)) throw new Error('phone');
+    const fields = new Map(card.fields);
+    fields.set(0x01, n);
+    if (p) fields.set(0x05, utf8.encode(p));
+    else fields.delete(0x05);
+    const out = [CARD_VERSION];
+    for (const [tag, v] of fields) out.push(tag, v.length >> 8, v.length & 0xff, ...v);
+    const bytes = Uint8Array.from(out);
+    return { bytes, fields, name: String(name).trim(), key: card.key, phone: p || null };
   }
 
   /**
@@ -107,7 +128,7 @@
     return parts;
   }
 
-  const api = { parseCard, encodeBundle, qrParts, random, hex, b64urlEncode, b64urlDecode, MAX_TEAM_NAME };
+  const api = { parseCard, withNameAndPhone, encodeBundle, qrParts, random, hex, b64urlEncode, b64urlDecode, MAX_TEAM_NAME, MAX_NAME };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.EcpBundle = api;
 })(typeof self !== 'undefined' ? self : this);

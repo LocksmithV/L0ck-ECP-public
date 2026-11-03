@@ -972,5 +972,32 @@
   "factoryResetHelp": "Smaže profil i návnadu, kontakty, týmy, zprávy, klíče a nastavení na tomto telefonu. Aplikace pak začne znovu jako po instalaci. Kontaktům se nic neposílá. Nejde to vrátit.",
   "factoryResetButton": "OBNOVIT TOVÁRNÍ NASTAVENÍ",
   "factoryResetAsk": "Opravdu smazat vše?",
-  "factoryResetConfirm": "SMAZAT VŠE"
+  "factoryResetConfirm": "SMAZAT VŠE",
+  "groupWorking": "Nastavuji… kontakty {done} z {total}",
+  "@groupWorking": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groupFailed": "Nastavení se nepovedlo: {error}",
+  "@groupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "groupOwnPhone": "Tvoje číslo pro SMS: {phone}",
+  "@groupOwnPhone": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  }
 }

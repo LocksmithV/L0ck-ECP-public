@@ -65,6 +65,32 @@ void main() {
     }
   });
 
+  test('a number the base typed in for this phone becomes its own number', () async {
+    final m = [await phone('Alfa'), await phone('Bravo')];
+    GroupBundle bundle(String? alfaPhone) {
+      final a = ContactCard.fromUri(m[0].myContactUri());
+      return GroupBundle(members: [
+        ContactCard(name: a.name, ecpKey: a.ecpKey, briarLink: a.briarLink, simplexLink: a.simplexLink, phone: alfaPhone),
+        ContactCard.fromUri(m[1].myContactUri()),
+      ]);
+    }
+
+    expect(m[0].ownPhone, isNull);
+    final b = bundle('+420 600 111 222');
+    expect(m[0].ownPhoneFrom(b), '+420 600 111 222');
+    expect((await m[0].importGroup(b))!.phone, '+420 600 111 222');
+    expect(m[0].ownPhone, '+420 600 111 222');
+    expect(m[0].ownPhoneFrom(b), isNull, reason: 'already the own number');
+    expect((await m[0].importGroup(bundle(null)))!.phone, isNull, reason: 'no number: the own one stays');
+    expect(m[0].ownPhone, '+420 600 111 222');
+    expect(m[1].ownPhoneFrom(b), isNull, reason: 'Bravo\'s card has none');
+
+    for (final p in m) {
+      await p.dispose();
+      await p.session.close();
+    }
+  });
+
   testWidgets('screen: parts in any order, a foreign QR is refused, then one tap sets up', (t) async {
     Lang.current.value = const Locale('cs');
     late List<MessagingService> m;
@@ -109,6 +135,40 @@ void main() {
         await p.dispose();
         await p.session.close();
       }
+    });
+  });
+
+  testWidgets('screen: a failing setup shows the error instead of loading for ever', (t) async {
+    Lang.current.value = const Locale('cs');
+    late List<MessagingService> m;
+    late String part;
+    await t.runAsync(() async {
+      m = [await phone('Alfa'), await phone('Bravo')];
+      final data = GroupBundle(members: [for (final p in m) ContactCard.fromUri(p.myContactUri())]).encode();
+      part = GroupBundle.toQrParts(data, id: '89abcdef').single;
+      await m[1].session.db.close(); // every write from now on fails
+    });
+    await t.pumpWidget(MaterialApp(
+      locale: const Locale('cs'),
+      supportedLocales: Lang.supported,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      home: GroupImportScreen(messaging: m[1], scan: ({String prompt = ''}) async => part),
+    ));
+    await t.tap(find.byKey(const Key('group-scan')));
+    await t.pump();
+    await t.tap(find.byKey(const Key('group-apply')));
+    for (var i = 0; i < 20 && find.textContaining('Nastavení se nepovedlo').evaluate().isEmpty; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await t.pump();
+    }
+    expect(find.textContaining('Nastavení se nepovedlo'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(t.widget<ButtonStyleButton>(find.byKey(const Key('group-apply'))).onPressed, isNotNull,
+        reason: 'another try is possible');
+
+    await t.runAsync(() async {
+      await m[0].dispose();
+      await m[0].session.close();
     });
   });
 }

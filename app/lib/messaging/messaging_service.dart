@@ -216,7 +216,9 @@ class MessagingService {
     }
     for (final t in _appTransports) {
       try {
-        await t.contactsChanged(all);
+        // Not waited for longer: a channel that hangs (no network, radio out of reach)
+        // must not hold up adding contacts; it carries on by itself
+        await t.contactsChanged(all).timeout(const Duration(seconds: 15));
       } catch (_) {
         // A channel that is down must not stop the others
       }
@@ -355,10 +357,16 @@ class MessagingService {
   }
 
   /// Switches the LoRa radio to the team's private channel (same key for every member).
+  /// The choice is saved first; a radio that does not answer in time (or has no free slot)
+  /// gets the channel when it connects again.
   Future<void> useTeamLoRa(Team t) async {
     final k = await teamLoraKey(t.key);
     await _db.setSetting(radioChannelKey, encodeChannelKey(k));
-    await transport<MeshCoreAppTransport>()?.setChannelSecret(k);
+    try {
+      await transport<MeshCoreAppTransport>()?.setChannelSecret(k).timeout(const Duration(seconds: 10));
+    } catch (e) {
+      debugPrint('lora channel: $e');
+    }
     channelsChanged.value++;
   }
 
@@ -367,14 +375,23 @@ class MessagingService {
   /// Sets this phone up from a [GroupBundle]: the other members become contacts, verified
   /// (the base saw every phone in person); the teams that list this phone are joined, with
   /// the other members as team members; the radio moves to the chosen team's LoRa channel
-  /// when this phone is in that team; the PACE order is taken over. Every phone imports the
-  /// same bundle, so nobody needs to be told. Null when this phone is not in the bundle.
-  Future<({int contacts, List<Team> teams, Team? lora, bool pace})?> importGroup(GroupBundle b) async {
+  /// when this phone is in that team; the PACE order is taken over. A phone number the base
+  /// gave this phone's own card (typed in there, or corrected) becomes the own number. Every
+  /// phone imports the same bundle, so nobody needs to be told. Null when this phone is not
+  /// in the bundle. [progress] hears how many of the other members are set up so far.
+  Future<({int contacts, List<Team> teams, Team? lora, bool pace, String? phone})?> importGroup(GroupBundle b,
+      {void Function(int done, int total)? progress}) async {
     final self = b.indexOf(session.identity.publicKey);
     if (self == null) return null;
+    // First, so that only contacts known before hear of it; the members have it in the bundle
+    final phone = ownPhoneFrom(b);
+    if (phone != null) await setOwnPhone(phone);
     final ids = <int, int>{};
+    final total = b.members.length - 1;
+    var done = 0;
     for (final (i, m) in b.members.indexed) {
       if (i == self) continue;
+      progress?.call(done++, total);
       switch (await addContactFromUri(m.toUri(), verified: true)) {
         case ContactAdded(:final contact) || ContactUpdated(:final contact):
           ids[i] = contact.id;
@@ -396,7 +413,15 @@ class MessagingService {
     if (lora != null) await useTeamLoRa(lora);
     if (b.pace != null) await setPaceOrder(b.pace!);
     channelsChanged.value++;
-    return (contacts: ids.length, teams: teams.values.toList(), lora: lora, pace: b.pace != null);
+    return (contacts: ids.length, teams: teams.values.toList(), lora: lora, pace: b.pace != null, phone: phone);
+  }
+
+  /// The number on this phone's own card in [b] when it differs from the own number, else
+  /// null.
+  String? ownPhoneFrom(GroupBundle b) {
+    final self = b.indexOf(session.identity.publicKey);
+    final phone = self == null ? null : b.members[self].phone?.trim();
+    return phone == null || phone.isEmpty || phone == ownPhone ? null : phone;
   }
 
   /// The team's name is a local label: each member may call it as they like.

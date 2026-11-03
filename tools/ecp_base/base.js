@@ -14,7 +14,17 @@ const T = {
     s1: 'Členové',
     s1help: 'Na každém telefonu otevři Můj kontakt a podrž QR před kamerou. Odkaz jde i vložit.',
     camStart: 'Zapnout kameru', camStop: 'Vypnout kameru',
-    pastePh: 'l0ck://c/…', add: 'Přidat',
+    pastePh: 'l0ck://c/…', load: 'Načíst',
+    camOffHint: 'Zapni kameru a podrž QR telefonu ve čtverci.',
+    stOff: 'KAMERA VYPNUTÁ', stReading: 'HLEDÁM QR', stFound: 'NAČTENO', stKnown: 'UŽ V SEZNAMU',
+    stError: 'NEPLATNÝ QR', stEdit: 'ÚPRAVA',
+    offMsg: 'Odkaz jde vložit i do pole pod kamerou.',
+    readingMsg: 'Podrž kontaktní QR telefonu ve čtverci.',
+    foundMsg: 'Zkontroluj jméno a číslo, pak Přidat.',
+    nameLbl: 'Jméno', phoneLbl: 'Telefon (SMS)',
+    accept: 'Přidat', save: 'Uložit', retry: 'Znovu', edit: 'Upravit',
+    nameBad: 'Jméno musí mít 1–24 B.', phoneBad: 'Číslo může obsahovat jen +, číslice a mezery.',
+    saved: (n) => `Uloženo: ${n}`,
     members: (n) => `Načteno: ${n}`,
     noMembers: 'Zatím nikdo.',
     added: (n) => `Přidán: ${n}`,
@@ -24,7 +34,8 @@ const T = {
     'team-card': 'Tohle je týmový QR. Na telefonu ukaž Můj kontakt.',
     isBundle: 'Tohle je balíček skupiny, ne kontakt.',
     camErr: 'Kamera není dostupná. Povol ji prohlížeči, nebo odkazy vlož ručně.',
-    remove: 'Odebrat',
+    remove: 'Smazat', qr: 'QR', close: 'Zavřít',
+    cardHelp: 'Kontakt tak, jak ho dostanou ostatní (i s úpravami). Telefon ho načte jako běžný kontakt.',
     s2: 'Týmy',
     s2help: 'Každý tým dostane nový náhodný klíč. Telefon se připojí jen k týmům, kde je zaškrtnutý. Kanál LoRa: rádia členů vybraného týmu se přepnou na jeho soukromý kanál.',
     addTeam: 'Přidat tým', teamDefault: (n) => `Tým ${n}`,
@@ -56,7 +67,17 @@ const T = {
     s1: 'Members',
     s1help: 'On each phone open My contact and hold its QR up to the camera. A link can be pasted too.',
     camStart: 'Start camera', camStop: 'Stop camera',
-    pastePh: 'l0ck://c/…', add: 'Add',
+    pastePh: 'l0ck://c/…', load: 'Load',
+    camOffHint: 'Start the camera and hold the phone\'s QR inside the square.',
+    stOff: 'CAMERA OFF', stReading: 'SCANNING', stFound: 'READ', stKnown: 'ALREADY LISTED',
+    stError: 'INVALID QR', stEdit: 'EDIT',
+    offMsg: 'A link can also be pasted below the camera.',
+    readingMsg: 'Hold the phone\'s contact QR inside the square.',
+    foundMsg: 'Check the name and number, then Add.',
+    nameLbl: 'Name', phoneLbl: 'Phone (SMS)',
+    accept: 'Add', save: 'Save', retry: 'Again', edit: 'Edit',
+    nameBad: 'The name must be 1–24 B.', phoneBad: 'A number may hold only +, digits and spaces.',
+    saved: (n) => `Saved: ${n}`,
     members: (n) => `Scanned: ${n}`,
     noMembers: 'Nobody yet.',
     added: (n) => `Added: ${n}`,
@@ -66,7 +87,8 @@ const T = {
     'team-card': 'This is a team QR. Show My contact on the phone.',
     isBundle: 'This is a group bundle, not a contact.',
     camErr: 'No camera. Allow it in the browser, or paste the links.',
-    remove: 'Remove',
+    remove: 'Delete', qr: 'QR', close: 'Close',
+    cardHelp: 'The contact as the others will get it (with any changes). A phone reads it as an ordinary contact.',
     s2: 'Teams',
     s2help: 'Each team gets a new random key. A phone joins only the teams it is ticked in. LoRa channel: the radios of the chosen team\'s members move to its private channel.',
     addTeam: 'Add team', teamDefault: (n) => `Team ${n}`,
@@ -124,24 +146,42 @@ function renderTexts() {
   $('cam').textContent = stream ? t('camStop') : t('camStart');
 }
 
+/** Edit, QR and Delete for one member of the list. */
+function actions(i) {
+  const m = state.members[i];
+  const edit = el('button', { className: 'small', textContent: t('edit') });
+  edit.onclick = () => openCard(m, i);
+  const qr = el('button', { className: 'small', textContent: t('qr') });
+  qr.onclick = () => showCard(m);
+  const rm = el('button', { className: 'small danger', textContent: t('remove') });
+  rm.onclick = () => {
+    state.members.splice(i, 1);
+    for (const team of state.teams) team.members.delete(m.key);
+    if (scan.mode === 'edit' && scan.index === i) setScan(idle());
+    changed();
+  };
+  return el('span', { className: 'acts' }, edit, qr, rm);
+}
+
+function showCard(m) {
+  $('cardTitle').textContent = m.phone ? `${m.name} · ${m.phone}` : m.name;
+  drawQr($('cardQr'), 'l0ck://c/' + EcpBundle.b64urlEncode(m.bytes), 6);
+  $('cardModal').hidden = false;
+  $('cardClose').focus();
+}
+
 function renderMembers() {
   $('membersTitle').textContent = t('members', state.members.length);
   const ul = $('members');
   ul.replaceChildren();
   if (!state.members.length) ul.append(el('li', { className: 'meta', textContent: t('noMembers') }));
   state.members.forEach((m, i) => {
-    const rm = el('button', { className: 'small', textContent: '×', title: t('remove') });
-    rm.onclick = () => {
-      state.members.splice(i, 1);
-      for (const team of state.teams) team.members.delete(m.key);
-      changed();
-    };
     ul.append(el('li', {},
       el('span', { className: 'dot' }),
       el('span', { className: 'meta', textContent: String(i + 1).padStart(2, '0') }),
       el('span', { className: 'name', textContent: m.name }),
       el('span', { className: 'meta', textContent: (m.phone ? m.phone + ' · ' : '') + m.key.slice(0, 8) }),
-      rm));
+      actions(i)));
   });
 }
 
@@ -216,6 +256,7 @@ function renderSteps() {
 
 function render() {
   renderTexts();
+  renderScan();
   renderSteps();
   renderMembers();
   renderTeams();
@@ -236,28 +277,113 @@ function changed() {
 }
 
 // --- members: camera and pasted links ---
+// The camera only reads: a card read (or pasted) waits beside it, its name and number can be
+// corrected, and it joins the list on Add. Again goes back to scanning.
 
 let stream = null, scanTimer = null, lastCode = '', lastAt = 0;
+const scan = { mode: 'off', card: null, index: -1, msg: '' };
+let audio = null;
 
-function say(ok, err) {
-  $('scanOk').textContent = ok || '';
-  $('scanErr').textContent = err || '';
+/** A short tone: high for a card read, low for a refused one. */
+function beep(ok) {
+  try {
+    audio = audio || new AudioContext();
+    const o = audio.createOscillator(), g = audio.createGain(), now = audio.currentTime;
+    o.type = 'square';
+    o.frequency.setValueAtTime(ok ? 1320 : 220, now);
+    if (ok) o.frequency.setValueAtTime(1760, now + 0.09);
+    g.gain.setValueAtTime(0.08, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + (ok ? 0.22 : 0.35));
+    o.connect(g).connect(audio.destination);
+    o.start(now);
+    o.stop(now + 0.4);
+  } catch (_) {
+    // no sound: the panel still shows it
+  }
 }
 
-function addCard(text) {
+function idle() {
+  return stream ? 'reading' : 'off';
+}
+
+function renderScan() {
+  const m = scan.mode;
+  const look = { off: 'off', reading: 'reading', found: 'found', edit: 'found', known: 'warn', error: 'warn' }[m];
+  $('status').className = `status ${look}`;
+  $('camBox').classList.toggle('on', !!stream);
+  $('camBox').classList.toggle('found', m === 'found' || m === 'edit');
+  $('stateText').textContent = t({ off: 'stOff', reading: 'stReading', found: 'stFound', edit: 'stEdit',
+    known: 'stKnown', error: 'stError' }[m]);
+  $('stateMsg').textContent = scan.msg || { off: t('offMsg'), reading: t('readingMsg'),
+    found: t('foundMsg'), edit: '' }[m] || '';
+  const card = m === 'found' || m === 'edit';
+  $('confirm').hidden = !card;
+  $('accept').hidden = !card;
+  $('accept').textContent = m === 'edit' ? t('save') : t('accept');
+  $('retry').hidden = m === 'off' || m === 'reading';
+  if (card) $('cKey').textContent = `ECP ${scan.card.key.slice(0, 16)}…`;
+}
+
+function setScan(mode, card = null, msg = '', index = -1) {
+  Object.assign(scan, { mode, card, msg, index });
+  $('cErr').textContent = '';
+  if (card) {
+    $('cName').value = card.name;
+    $('cPhone').value = card.phone || '';
+  }
+  renderScan();
+  if (mode === 'found' || mode === 'edit') $('cName').focus();
+}
+
+/** A scanned or pasted text: shown beside the camera, not added yet. */
+function loadCard(text) {
   const s = String(text).trim();
-  if (s.startsWith('l0ck://g/')) return say(null, t('isBundle'));
+  if (!s) return;
+  if (s.startsWith('l0ck://g/')) {
+    beep(false);
+    return setScan('error', null, t('isBundle'));
+  }
   let card;
   try {
     card = EcpBundle.parseCard(s);
   } catch (e) {
-    return say(null, t(e.message) || e.message);
+    beep(false);
+    return setScan('error', null, t(e.message) || e.message);
   }
-  if (state.members.some((m) => m.key === card.key)) return say(t('known', card.name));
-  if (state.members.length >= 250) return;
-  state.members.push(card);
-  say(t('added', card.name));
+  beep(true);
+  if (state.members.some((m) => m.key === card.key)) return setScan('known', null, t('known', card.name));
+  setScan('found', card);
+}
+
+/** A member from the list back in the panel, to correct the name or number. */
+function openCard(card, index) {
+  setScan('edit', card, '', index);
+}
+
+function accept() {
+  let card;
+  try {
+    card = EcpBundle.withNameAndPhone(scan.card, $('cName').value, $('cPhone').value);
+  } catch (e) {
+    $('cErr').textContent = t(e.message === 'name' ? 'nameBad' : 'phoneBad');
+    return;
+  }
+  let msg;
+  if (scan.mode === 'edit') {
+    state.members[scan.index] = card; // same key: team ticks stay
+    msg = t('saved', card.name);
+  } else {
+    if (state.members.length >= 250 || state.members.some((m) => m.key === card.key)) return setScan(idle());
+    state.members.push(card);
+    msg = t('added', card.name);
+  }
   changed();
+  setScan(idle(), null, msg);
+}
+
+function again() {
+  lastCode = ''; // the same QR may be read again
+  setScan(idle());
 }
 
 async function startCamera(deviceId) {
@@ -268,13 +394,12 @@ async function startCamera(deviceId) {
     });
   } catch (_) {
     stream = null;
-    say(null, t('camErr'));
+    setScan('error', null, t('camErr'));
     renderTexts();
     return;
   }
   const video = $('video');
   video.srcObject = stream;
-  video.hidden = false;
   await video.play();
   const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
   const sel = $('cams');
@@ -282,7 +407,7 @@ async function startCamera(deviceId) {
   sel.value = stream.getVideoTracks()[0].getSettings().deviceId || '';
   sel.hidden = cams.length < 2;
   scanTimer = setInterval(scanFrame, 200);
-  say();
+  if (scan.mode === 'off' || scan.mode === 'error') setScan('reading');
   renderTexts();
 }
 
@@ -291,14 +416,16 @@ function stopCamera() {
   scanTimer = null;
   if (stream) for (const tr of stream.getTracks()) tr.stop();
   stream = null;
-  $('video').hidden = true;
+  $('video').srcObject = null;
   $('cams').hidden = true;
+  if (scan.mode === 'reading') setScan('off');
+  else renderScan();
   renderTexts();
 }
 
 function scanFrame() {
   const video = $('video');
-  if (!video.videoWidth) return;
+  if (scan.mode !== 'reading' || !video.videoWidth) return; // a card waits for Add or Again
   const scale = Math.min(1, 960 / video.videoWidth);
   const w = Math.round(video.videoWidth * scale), h = Math.round(video.videoHeight * scale);
   const c = $('frame');
@@ -312,7 +439,7 @@ function scanFrame() {
   if (code.data === lastCode && now - lastAt < 4000) return; // the same phone still in view
   lastCode = code.data;
   lastAt = now;
-  addCard(code.data);
+  loadCard(code.data);
 }
 
 // --- the bundle ---
@@ -349,25 +476,29 @@ function makeBundle() {
   show(0);
 }
 
-function show(i) {
-  const parts = state.parts;
-  if (!parts) return;
-  state.shown = ((i % parts.length) + parts.length) % parts.length;
+/** Draws [text] as a QR code on [canvas], with the quiet zone. */
+function drawQr(canvas, text, cell = 8) {
   const qr = qrcode(0, 'M');
-  qr.addData(parts[state.shown]);
+  qr.addData(text);
   qr.make();
-  const n = qr.getModuleCount(), margin = 4, cell = 8;
-  const c = $('qrc');
-  c.width = c.height = (n + 2 * margin) * cell;
-  const g = c.getContext('2d');
+  const n = qr.getModuleCount(), margin = 4;
+  canvas.width = canvas.height = (n + 2 * margin) * cell;
+  const g = canvas.getContext('2d');
   g.fillStyle = '#fff';
-  g.fillRect(0, 0, c.width, c.height);
+  g.fillRect(0, 0, canvas.width, canvas.height);
   g.fillStyle = '#000';
   for (let r = 0; r < n; r++) {
     for (let col = 0; col < n; col++) {
       if (qr.isDark(r, col)) g.fillRect((col + margin) * cell, (r + margin) * cell, cell, cell);
     }
   }
+}
+
+function show(i) {
+  const parts = state.parts;
+  if (!parts) return;
+  state.shown = ((i % parts.length) + parts.length) % parts.length;
+  drawQr($('qrc'), parts[state.shown]);
   renderBundle();
 }
 
@@ -388,7 +519,10 @@ for (const b of document.querySelectorAll('[data-lang]')) {
 }
 $('cam').onclick = () => (stream ? stopCamera() : startCamera());
 $('cams').onchange = () => { stopCamera(); startCamera($('cams').value); };
-$('addPaste').onclick = () => { addCard($('paste').value); $('paste').value = ''; };
+$('addPaste').onclick = () => { loadCard($('paste').value); $('paste').value = ''; };
+$('accept').onclick = accept;
+$('retry').onclick = again;
+for (const f of ['cName', 'cPhone']) $(f).onkeydown = (e) => { if (e.key === 'Enter') accept(); };
 $('paste').onkeydown = (e) => { if (e.key === 'Enter') $('addPaste').click(); };
 $('addTeam').onclick = () => {
   state.teams.push({ name: t('teamDefault', state.teams.length + 1), key: EcpBundle.random(32),
@@ -401,7 +535,10 @@ $('make').onclick = makeBundle;
 $('prev').onclick = () => { setAuto(false); show(state.shown - 1); };
 $('next').onclick = () => { setAuto(false); show(state.shown + 1); };
 $('auto').onchange = () => setAuto($('auto').checked);
+$('cardClose').onclick = () => { $('cardModal').hidden = true; };
+$('cardModal').onclick = (e) => { if (e.target === $('cardModal')) $('cardModal').hidden = true; };
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') $('cardModal').hidden = true;
   if (!state.parts || e.target.tagName === 'INPUT') return;
   if (e.key === 'ArrowRight') $('next').click();
   if (e.key === 'ArrowLeft') $('prev').click();

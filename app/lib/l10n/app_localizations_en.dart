@@ -1453,4 +1453,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get factoryResetConfirm => 'ERASE ALL';
+
+  @override
+  String groupWorking(int done, int total) {
+    return 'Setting up… contacts $done of $total';
+  }
+
+  @override
+  String groupFailed(String error) {
+    return 'Setup failed: $error';
+  }
+
+  @override
+  String groupOwnPhone(String phone) {
+    return 'Your SMS number: $phone';
+  }
 }

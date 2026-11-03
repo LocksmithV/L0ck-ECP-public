@@ -2587,6 +2587,24 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'SMAZAT VŠE'**
   String get factoryResetConfirm;
+
+  /// No description provided for @groupWorking.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nastavuji… kontakty {done} z {total}'**
+  String groupWorking(int done, int total);
+
+  /// No description provided for @groupFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nastavení se nepovedlo: {error}'**
+  String groupFailed(String error);
+
+  /// No description provided for @groupOwnPhone.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tvoje číslo pro SMS: {phone}'**
+  String groupOwnPhone(String phone);
 }
 
 class _AppLocalizationsDelegate

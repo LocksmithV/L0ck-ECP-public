@@ -25,6 +25,16 @@ assert.throws(() => B.parseCard(teamCard), /team-card/);
 assert.throws(() => B.parseCard('l0ck://c/AgEA'), /bad-card/);
 assert.throws(() => B.parseCard('https://example.org'), /not-card/);
 
+// The base corrects a name and adds a number; the rest of the card stays
+const edited = B.withNameAndPhone(m[1], 'Bravo 2', '+420 777 000 002');
+const back2 = B.parseCard('l0ck://c/' + B.b64urlEncode(edited.bytes));
+assert.deepEqual([back2.name, back2.phone, back2.key], ['Bravo 2', '+420 777 000 002', m[1].key]);
+assert.deepEqual(back2.fields.get(0x04), m[1].fields.get(0x04), 'the SimpleX link is kept');
+assert.equal(B.parseCard('l0ck://c/' + B.b64urlEncode(B.withNameAndPhone(m[0], 'Alfa', '').bytes)).phone, null);
+assert.throws(() => B.withNameAndPhone(m[0], '', null), /name/);
+assert.throws(() => B.withNameAndPhone(m[0], 'x'.repeat(25), null), /name/);
+assert.throws(() => B.withNameAndPhone(m[0], 'Alfa', '12a'), /phone/);
+
 const bundle = B.encodeBundle({
   members: m,
   teams: [

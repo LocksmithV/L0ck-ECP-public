@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:ecp_meshcore/ecp_meshcore.dart';
 import 'package:flutter/services.dart';
 
+import 'lock_hold.dart';
+
 /// Runtime permissions (MainActivity). Bluetooth needs CONNECT (and SCAN for Bramble's
 /// squad net) from Android 12 on; older versions grant them at install.
 class Permissions {
@@ -19,8 +21,8 @@ class Permissions {
 }
 
 /// Makes this phone visible over Bluetooth for two minutes (system dialog); false if refused.
-Future<bool> requestDiscoverable() async =>
-    await const MethodChannel('cz.l0ck.ecp/activity').invokeMethod<bool>('discoverable') ?? false;
+Future<bool> requestDiscoverable() => LockHold.during(() async =>
+    await const MethodChannel('cz.l0ck.ecp/activity').invokeMethod<bool>('discoverable') ?? false);
 
 class PairedDevice {
   const PairedDevice(this.address, this.name);

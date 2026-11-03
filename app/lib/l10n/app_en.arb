@@ -414,5 +414,8 @@
   "factoryResetHelp": "Erases the profile and the decoy, contacts, teams, messages, keys and settings on this phone. The app then starts again as after installing. Nothing is sent to contacts. It cannot be undone.",
   "factoryResetButton": "FACTORY RESET",
   "factoryResetAsk": "Really erase everything?",
-  "factoryResetConfirm": "ERASE ALL"
+  "factoryResetConfirm": "ERASE ALL",
+  "groupWorking": "Setting up… contacts {done} of {total}",
+  "groupFailed": "Setup failed: {error}",
+  "groupOwnPhone": "Your SMS number: {phone}"
 }
