@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:ecp_core/ecp_core.dart';
 import 'package:test/test.dart';
@@ -177,5 +178,66 @@ void main() {
     expect(() => decodeText([0xff, 0xfe]), throwsFormatException);
     expect(decodeAck(encodeAck(utf8.encode('12345678'))), utf8.encode('12345678'));
     expect(() => decodeAck([1, 2]), throwsFormatException);
+  });
+
+  test('voice: a clip is cut into parts that join again in any order', () {
+    final audio = Uint8List.fromList(List.generate(20000, (i) => i % 251));
+    final id = Uint8List.fromList([1, 2, 3, 4]);
+    final parts = VoicePart.split(id, VoicePart.opus, 12345, audio);
+    expect(parts.map((p) => (p.index, p.count, p.data.length)),
+        [for (var i = 1; i <= 7; i++) (i, 7, i < 7 ? VoicePart.maxData : 20000 - 6 * VoicePart.maxData)]);
+    final back = [for (final p in parts.reversed) VoicePart.decode(p.encode())];
+    final clip = VoicePart.join(back);
+    expect((clip.count, clip.codec, clip.durationMs, clip.clipHex), (1, VoicePart.opus, 12345, '01020304'));
+    expect(clip.data, audio);
+    expect(() => VoicePart.join(back.take(2).toList()), throwsArgumentError);
+    expect(() => VoicePart.decode([1, 2, 3]), throwsFormatException);
+    expect(() => VoicePart.decode([1, 2, 3, 4, 3, 2, 1, 0, 0]), throwsFormatException, reason: 'index > count');
+    expect(VoicePart.split(id, VoicePart.aac, 900, Uint8List(100)).single.count, 1);
+    // A part with its envelope fits a Bramble message (4096 B, plus its 1-byte kind)
+    expect(VoicePart.headerLength + VoicePart.maxData + EcpEnvelope.overhead + EcpEnvelope.teamInnerHeaderLength + 2,
+        lessThan(4096));
+  });
+
+  test('call signals: offer with SDP, end with a reason', () {
+    final id = Uint8List.fromList(List.generate(8, (i) => i));
+    final o = CallSignal.decode(CallSignal.sdp(id, CallSignal.offer, 'v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111').encode());
+    expect((o.callHex, o.kind, o.sdp.startsWith('v=0')), ('0001020304050607', CallSignal.offer, true));
+    // A real-size offer (with candidates) shrinks enough for one Bramble message (4 KB)
+    final big = List.generate(40, (i) => 'a=candidate:$i 1 udp 2122260223 192.0.2.$i 4${i}000 typ host generation 0\r\n').join();
+    final packed = CallSignal.sdp(id, CallSignal.offer, 'v=0\r\n$big').encode();
+    expect(packed.length, lessThan(2000));
+    expect(CallSignal.decode(packed).sdp, 'v=0\r\n$big');
+    expect(() => CallSignal(callId: id, kind: CallSignal.offer, data: Uint8List.fromList([1, 2])).sdp, throwsFormatException);
+    final e = CallSignal.decode(CallSignal.ended(id, CallSignal.busy).encode());
+    expect((e.kind, e.reason), (CallSignal.end, CallSignal.busy));
+    expect(() => CallSignal.decode([1, 2, 3]), throwsFormatException);
+    expect(() => CallSignal.decode([...id, 9]), throwsFormatException);
+  });
+
+  test('files: an attachment in parts joins again; every part fits a Bramble message', () {
+    final photo = Attachment(
+        kind: Attachment.photo, name: 'fotka.jpg', mime: 'image/jpeg', bytes: Uint8List.fromList(List.generate(10000, (i) => i % 256)));
+    final parts = FilePart.split(Uint8List.fromList([9, 9, 9, 9]), photo.encode());
+    expect(parts.length, 4);
+    expect(parts.every((p) => p.encode().length + EcpEnvelope.overhead + EcpEnvelope.teamInnerHeaderLength + 2 < 4096), isTrue);
+    final back = Attachment.decode(FilePart.join([for (final p in parts.reversed) FilePart.decode(p.encode())]));
+    expect((back.kind, back.name, back.mime), (Attachment.photo, 'fotka.jpg', 'image/jpeg'));
+    expect(back.bytes, photo.bytes);
+    expect(() => FilePart.join(parts.skip(1).toList()), throwsArgumentError);
+    expect(() => Attachment.decode([7]), throwsFormatException);
+  });
+
+  test('status: own position and a rally point, each optional; the old form still reads', () {
+    const me = Position(lat: 50.1, lon: 14.4);
+    const meet = Position(lat: 50.2, lon: 14.5);
+    final at = DateTime.utc(2026, 11, 4, 13, 6);
+    for (final (p, r) in [(null, null), (me, null), (null, (point: meet, at: at)), (me, (point: meet, at: at))]) {
+      final back = Report.decode(StatusReport(StatusCode.moving, p, r).encode()) as StatusReport;
+      expect(back.status, StatusCode.moving);
+      expect(back.position?.lat, p == null ? isNull : closeTo(50.1, 1e-6));
+      expect(back.rally?.point.lat, r == null ? isNull : closeTo(50.2, 1e-6));
+      expect(back.rally?.at, r?.at);
+    }
   });
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only the camera's output folder in the app's private cache is ever shared, with the
+     camera app, for the one photo it takes (MainActivity, "photo"). -->
+<paths>
+    <cache-path name="photos" path="photos/" />
+</paths>

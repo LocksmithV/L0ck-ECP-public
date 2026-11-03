@@ -204,6 +204,77 @@ void main() {
       expect(r.position!.lat, closeTo(50.088, 1e-6));
     });
 
+    test('voice: a clip in three parts is one message at the other end, delivered once all are', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await bob.addContactFromUri(alice.myContactUri());
+      expect(alice.canSendVoice(a.contact.id), isTrue);
+      final audio = Uint8List.fromList(List.generate(20000, (i) => i * 7 % 256));
+      final id = await alice.sendVoice(a.contact.id, VoicePart.opus, 2500, audio);
+      final adb = alice.session.db, bdb = bob.session.db;
+      await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+      final got = (await bdb.select(bdb.messages).get()).single;
+      expect(got.type, MessageType.voice);
+      final clip = VoicePart.decode(got.payload);
+      expect((clip.count, clip.durationMs, clip.codec), (1, 2500, VoicePart.opus));
+      expect(clip.data, audio);
+      expect(await bdb.select(bdb.voiceParts).get(), isEmpty, reason: 'parts are gone once joined');
+      await until(() async =>
+          (await (adb.select(adb.messages)..where((m) => m.id.equals(id))).getSingle()).status == 'delivered');
+      expect(await adb.select(adb.messages).get(), hasLength(1), reason: 'one row for the whole clip');
+
+      aSide.up = false; // no SimpleX/Bramble: no voice (it would not go by LoRa or SMS)
+      expect(alice.canSendVoice(a.contact.id), isFalse);
+    });
+
+    test('a file in parts arrives whole, with its name and type', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await bob.addContactFromUri(alice.myContactUri());
+      final bytes = Uint8List.fromList(List.generate(9000, (i) => i * 3 % 256));
+      await alice.sendAttachment(
+          a.contact.id, Attachment(kind: Attachment.file, name: 'mapa.pdf', mime: 'application/pdf', bytes: bytes));
+      final bdb = bob.session.db;
+      await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+      final got = (await bdb.select(bdb.messages).get()).single;
+      expect(got.type, MessageType.file);
+      final file = Attachment.decode(got.payload);
+      expect((file.name, file.mime, file.kind), ('mapa.pdf', 'application/pdf', Attachment.file));
+      expect(file.bytes, bytes);
+      expect(await bdb.select(bdb.voiceParts).get(), isEmpty);
+    });
+
+    test('parts arriving all at once still make one message', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await bob.addContactFromUri(alice.myContactUri());
+      // Bob's side handles every part at the same moment (no awaits in between)
+      final blob = Attachment(kind: Attachment.file, name: 'a.bin', mime: 'x/y', bytes: Uint8List(7000)).encode();
+      final parts = FilePart.split(Uint8List.fromList([1, 1, 1, 1]), blob);
+      final aKeys = alice.router.keys.pairs['${a.contact.id}']!;
+      final now = DateTime.now();
+      final envs = [
+        for (final p in parts)
+          await EcpEnvelope.seal(
+              kind: EnvelopeKind.pair,
+              key: aKeys.send,
+              message: InnerMessage.create(type: MessageType.file, payload: p.encode(), now: now),
+              now: now)
+      ];
+      await Future.wait([for (final e in envs) bob.router.receive(bSide, e, now: now)]);
+      final bdb = bob.session.db;
+      await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(await bdb.select(bdb.messages).get(), hasLength(1));
+    });
+
+    test('clearing a chat empties it on this phone; the contact stays', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await alice.sendText(a.contact.id, 'ahoj');
+      final adb = alice.session.db;
+      expect(await adb.select(adb.messages).get(), hasLength(1));
+      await alice.clearChat(contactId: a.contact.id);
+      expect(await adb.select(adb.messages).get(), isEmpty);
+      expect(await adb.select(adb.contacts).get(), hasLength(1));
+    });
+
     test('deleting a contact removes its conversation and keys', () async {
       final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
       await alice.sendText(a.contact.id, 'x');

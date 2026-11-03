@@ -3,6 +3,16 @@ package cz.l0ck.ecp
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
+import android.net.Uri
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
+import java.io.ByteArrayOutputStream
+import java.io.File
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import com.google.zxing.integration.android.IntentIntegrator
@@ -51,6 +61,9 @@ class MainActivity : FlutterActivity() {
     private var scanChannel: MethodChannel? = null
     private var pendingScan: MethodChannel.Result? = null
     private var pendingDiscoverable: MethodChannel.Result? = null
+    private var pendingFiles: MethodChannel.Result? = null
+    private var photoFile: File? = null
+    private var toSave: ByteArray? = null
 
     // Runtime permissions need an activity, so this channel lives and dies with it
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -141,6 +154,42 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
+        // Chat attachments: a photo with the camera app, a file from the system picker, saving a
+        // received one where the user chooses. Storage Access Framework: no storage permission.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, FILES).setMethodCallHandler { call, result ->
+            pendingFiles?.success(null)
+            pendingFiles = result
+            try {
+                when (call.method) {
+                    "photo" -> {
+                        val dir = File(cacheDir, "photos").apply { mkdirs() }
+                        val f = File.createTempFile("photo", ".jpg", dir)
+                        photoFile = f
+                        val uri = FileProvider.getUriForFile(this, "$packageName.photos", f)
+                        startActivityForResult(Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                            .putExtra(MediaStore.EXTRA_OUTPUT, uri)
+                            .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION), REQUEST_PHOTO)
+                    }
+                    "pick" -> startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT)
+                        .addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), REQUEST_PICK)
+                    "save" -> {
+                        toSave = call.argument<ByteArray>("data")
+                        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT)
+                            .addCategory(Intent.CATEGORY_OPENABLE)
+                            .setType(call.argument<String>("mime") ?: "application/octet-stream")
+                            .putExtra(Intent.EXTRA_TITLE, call.argument<String>("name") ?: "soubor"), REQUEST_SAVE)
+                    }
+                    else -> {
+                        pendingFiles = null
+                        result.notImplemented()
+                    }
+                }
+            } catch (e: Exception) {
+                pendingFiles = null
+                result.error("FILES", e.toString(), null)
+            }
+        }
+
         // QR scanning needs this activity too (startActivityForResult)
         scanChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SCAN).apply {
             setMethodCallHandler { call, result ->
@@ -160,6 +209,37 @@ class MainActivity : FlutterActivity() {
 
     @Deprecated("FlutterActivity is not a ComponentActivity; the result API is not available")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_PHOTO || requestCode == REQUEST_PICK || requestCode == REQUEST_SAVE) {
+            val result = pendingFiles ?: return
+            pendingFiles = null
+            val ok = resultCode == RESULT_OK
+            Thread {
+                val answer: Any? = try {
+                    when (requestCode) {
+                        REQUEST_PHOTO -> photoFile?.let { f ->
+                            photoFile = null
+                            val jpeg = if (ok && f.length() > 0) shrinkPhoto(f) else null
+                            f.delete()
+                            jpeg
+                        }
+                        REQUEST_PICK -> data?.data?.takeIf { ok }?.let { readPicked(it) }
+                        else -> {
+                            val bytes = toSave
+                            toSave = null
+                            val uri = data?.data
+                            if (ok && uri != null && bytes != null) {
+                                contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                                true
+                            } else false
+                        }
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+                runOnUiThread { result.success(answer) }
+            }.start()
+            return
+        }
         if (requestCode == REQUEST_DISCOVERABLE) {
             pendingDiscoverable?.success(resultCode != RESULT_CANCELED)
             pendingDiscoverable = null
@@ -169,6 +249,59 @@ class MainActivity : FlutterActivity() {
         if (r == null) return super.onActivityResult(requestCode, resultCode, data)
         pendingScan?.success(r.contents)
         pendingScan = null
+    }
+
+    /** The photo upright, at most 1600 px, re-encoded as JPEG under [MAX_ATTACHMENT] bytes —
+     *  which also drops every EXIF field, the GPS position and the camera model among them. */
+    private fun shrinkPhoto(f: File): ByteArray {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(f.path, bounds)
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1600) sample *= 2
+        var bmp = BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = sample })
+            ?: throw IllegalStateException("no image")
+        val m = Matrix()
+        when (ExifInterface(f.path).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> m.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> m.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> m.postRotate(270f)
+        }
+        val scale = minOf(1f, 1600f / maxOf(bmp.width, bmp.height))
+        m.postScale(scale, scale)
+        bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
+        var quality = 75
+        while (true) {
+            val out = ByteArrayOutputStream()
+            bmp.compress(Bitmap.CompressFormat.JPEG, quality, out)
+            if (out.size() <= MAX_ATTACHMENT || quality <= 30) return out.toByteArray()
+            quality -= 15
+        }
+    }
+
+    /** {name, mime, data}, or {name, size} without data when it is over [MAX_ATTACHMENT]. */
+    private fun readPicked(uri: Uri): Map<String, Any?> {
+        var name = "soubor"
+        var size = -1L
+        contentResolver.query(uri, null, null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                c.getColumnIndex(OpenableColumns.DISPLAY_NAME).takeIf { it >= 0 }?.let { name = c.getString(it) ?: name }
+                c.getColumnIndex(OpenableColumns.SIZE).takeIf { it >= 0 && !c.isNull(it) }?.let { size = c.getLong(it) }
+            }
+        }
+        val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+        if (size > MAX_ATTACHMENT) return mapOf("name" to name, "size" to size)
+        val bytes = contentResolver.openInputStream(uri)?.use { input ->
+            val out = ByteArrayOutputStream()
+            val buf = ByteArray(16 * 1024)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                out.write(buf, 0, n)
+                if (out.size() > MAX_ATTACHMENT) return mapOf("name" to name, "size" to out.size().toLong())
+            }
+            out.toByteArray()
+        } ?: throw IllegalStateException("cannot read")
+        return mapOf("name" to name, "mime" to mime, "data" to bytes)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
@@ -190,6 +323,13 @@ class MainActivity : FlutterActivity() {
         const val SCAN = "cz.l0ck.ecp/scan"
         const val BIOMETRIC = "cz.l0ck.ecp/biometric"
         const val REQUEST_DISCOVERABLE = 7301
+        const val REQUEST_PHOTO = 7302
+        const val REQUEST_PICK = 7303
+        const val REQUEST_SAVE = 7304
+        const val FILES = "cz.l0ck.ecp/files"
+
+        /** Attachment.maxBytes (ecp_core). */
+        const val MAX_ATTACHMENT = 512 * 1024
 
         /** Conversation from the last tapped notification, until Dart takes it. */
         @Volatile

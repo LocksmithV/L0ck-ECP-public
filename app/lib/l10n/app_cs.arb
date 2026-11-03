@@ -659,8 +659,7 @@
   "persons": "osob",
   "reports": "HLÁŠENÍ",
   "myPosition": "Moje poloha",
-  "statusSub": "v pořádku, pomoc, zraněn…",
-  "rallySub": "místo a čas setkání",
+  "statusSub": "v pořádku, pomoc, zraněn… a SRAZ",
   "sitrepSub": "stav, počet osob, krátký text",
   "salterSub": "pozorování: velikost, činnost, místo, čas, vybavení, poznámky",
   "fiveWSub": "kdo, co, kde, kdy, proč",
@@ -1006,5 +1005,104 @@
       }
     }
   },
-  "groupNoChange": "Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo."
+  "groupNoChange": "Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo.",
+  "voiceMessage": "Hlasová zpráva {length}",
+  "@voiceMessage": {
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceRecord": "Hlasová zpráva",
+  "voiceNoChannel": "Hlasová zpráva potřebuje SimpleX nebo Bramble (internet, Wi-Fi nebo Bluetooth). LoRa a SMS ji neunesou.",
+  "voiceRecording": "Nahrávám",
+  "voiceAtLimit": "Nejvýš 30 s: nahrávání skončilo",
+  "voiceDiscard": "Zahodit",
+  "voiceMicDenied": "Bez přístupu k mikrofonu nejde nahrávat.",
+  "voiceFailed": "Nahrávání se nepovedlo.",
+  "voicePlayFailed": "Zprávu nejde přehrát.",
+  "callAction": "Volat",
+  "callNoChannel": "Hovor potřebuje SimpleX nebo Bramble a k tomu internet nebo společnou Wi-Fi.",
+  "callCalling": "Volám…",
+  "callIncoming": "Příchozí hovor",
+  "callConnecting": "Spojuji…",
+  "callEnded": "Hovor skončil",
+  "callDeclinedEnd": "Hovor odmítnut",
+  "callBusy": "Obsazeno",
+  "callNoAnswer": "Nikdo to nezvedá",
+  "callFailedEnd": "Spojení se nepodařilo",
+  "callAccept": "Přijmout",
+  "callDecline": "Odmítnout",
+  "callHangUp": "Zavěsit",
+  "callMute": "Ztlumit",
+  "callSpeaker": "Reproduktor",
+  "callDirect": "Šifrováno · přímé spojení",
+  "callRelayed": "Šifrováno · přes server SimpleX",
+  "callEncrypted": "Šifrováno (DTLS-SRTP)",
+  "logOut": "Odchozí hovor {length}",
+  "@logOut": {
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "logIn": "Příchozí hovor {length}",
+  "@logIn": {
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "logMissedIn": "Zmeškaný hovor",
+  "logMissedOut": "Nepřijatý hovor",
+  "logDeclined": "Odmítnutý hovor",
+  "logFailed": "Hovor se nepodařil",
+  "attachPhoto": "Vyfotit",
+  "attachPhotoSub": "Zmenšená, bez polohy a údajů o fotoaparátu (EXIF)",
+  "attachFile": "Soubor",
+  "attachFileSub": "Nejvýš 512 kB",
+  "attachNoChannel": "Fotky a soubory potřebují SimpleX nebo Bramble (internet nebo Wi-Fi), ne Bluetooth, LoRa ani SMS.",
+  "attachTooBig": "Soubor má {size}, poslat jde nejvýš 512 kB.",
+  "@attachTooBig": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "attachSending": "Odesílám ({size})…",
+  "@attachSending": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "attachCamDenied": "Bez přístupu k fotoaparátu nejde fotit.",
+  "attachFailed": "Přílohu se nepodařilo načíst.",
+  "photoLabel": "Fotografie",
+  "fileLabel": "Soubor {name} ({size})",
+  "@fileLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSaved": "Uloženo.",
+  "fileSaveFailed": "Uložení se nepovedlo.",
+  "attachments": "PŘÍLOHY",
+  "contactInfo": "Informace o kontaktu",
+  "clearChat": "Vymazat chat",
+  "clearChatAsk": "Vymazat obsah chatu?",
+  "clearChatText": "Smaže zprávy, hlášení, hlasové zprávy a přílohy tohoto chatu jen na tomto telefonu. Kontakt nebo tým zůstane.",
+  "chatCleared": "Chat vymazán.",
+  "statusWithRally": "Přidat SRAZ (místo a čas)",
+  "rallyPlace": "Místo srazu"
 }

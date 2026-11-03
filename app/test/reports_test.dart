@@ -43,6 +43,13 @@ void main() {
     expect(reportText(MessageType.report, medevac), startsWith('MEDEVAC SOKOL1'));
   });
 
+  test('STATUS with a rally point reads back with place and time', () {
+    const p = Position(lat: 50.088, lon: 14.4208);
+    final text = reportText(MessageType.report,
+        StatusReport(StatusCode.moving, null, (point: p, at: DateTime(2026, 11, 4, 13, 6))).encode());
+    expect(text, allOf(startsWith('STATUS'), contains('SRAZ 50.08800 N'), contains('13:06')));
+  });
+
   test('SALTER and 5W read back in the chosen language', () {
     const p = Position(lat: 50.088, lon: 14.4208);
     final at = DateTime(2026, 11, 2, 14, 5);

@@ -71,6 +71,9 @@ class OutboxRows extends Table {
   BoolColumn get smsApproved => boolean()();
   TextColumn get tried => text()();
 
+  /// The only PACE layers allowed (layer names, comma-separated); null: all (OutboxEntry.layers).
+  TextColumn get layers => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -107,6 +110,20 @@ class TeamMembers extends Table {
   Set<Column> get primaryKey => {teamId, contactId};
 }
 
+/// Parts of an incoming voice clip or file (ecp_core VoicePart / FilePart) until all are
+/// here; then it becomes one message and its parts go. [clip] tells them apart by sender:
+/// `c:<contact>:<v|f>:<id>` or `t:<team>:<sender>:<v|f>:<id>`.
+@DataClassName('VoicePartRow')
+class VoiceParts extends Table {
+  TextColumn get clip => text()();
+  IntColumn get idx => integer()();
+  BlobColumn get payload => blob()();
+  DateTimeColumn get at => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {clip, idx};
+}
+
 /// Per-profile settings (e.g. which LoRa radio this profile uses), key → value.
 class SettingRows extends Table {
   TextColumn get key => text()();
@@ -116,12 +133,13 @@ class SettingRows extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [IdentityRows, Contacts, Messages, OutboxRows, SeenIds, SettingRows, Teams, TeamMembers])
+@DriftDatabase(
+    tables: [IdentityRows, Contacts, Messages, OutboxRows, SeenIds, SettingRows, Teams, TeamMembers, VoiceParts])
 class EcpDatabase extends _$EcpDatabase {
   EcpDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -139,6 +157,10 @@ class EcpDatabase extends _$EcpDatabase {
           if (from < 5) {
             await m.createTable(teamMembers);
             if (from >= 2) await m.addColumn(messages, messages.statusAt);
+          }
+          if (from < 6) {
+            await m.createTable(voiceParts);
+            if (from >= 2) await m.addColumn(outboxRows, outboxRows.layers);
           }
         },
         beforeOpen: (details) async {

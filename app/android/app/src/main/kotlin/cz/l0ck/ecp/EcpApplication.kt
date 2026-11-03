@@ -1,6 +1,7 @@
 package cz.l0ck.ecp
 
 import android.app.Application
+import cz.l0ck.ecp.audio.AudioHost
 import cz.l0ck.ecp.bramble.BrambleHost
 import cz.l0ck.ecp.location.LocationHost
 import cz.l0ck.ecp.net.NetHost
@@ -36,6 +37,7 @@ class EcpApplication : Application(), BrambleApplication {
         NotifyHost(this).attach(messenger)
         LocationHost(this).attach(messenger)
         NetHost(this).attach(messenger)
+        AudioHost(this).attach(messenger)
         engine.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault())
         FlutterEngineCache.getInstance().put(ENGINE, engine)
     }

@@ -964,10 +964,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPosition => 'My position';
 
   @override
-  String get statusSub => 'OK, help, injured…';
-
-  @override
-  String get rallySub => 'meeting place and time';
+  String get statusSub => 'OK, help, injured… and a RALLY point';
 
   @override
   String get sitrepSub => 'state, persons, short text';
@@ -1472,4 +1469,183 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get groupNoChange =>
       'Done. The phone already matches the bundle; nothing changed.';
+
+  @override
+  String voiceMessage(String length) {
+    return 'Voice message $length';
+  }
+
+  @override
+  String get voiceRecord => 'Voice message';
+
+  @override
+  String get voiceNoChannel =>
+      'A voice message needs SimpleX or Bramble (internet, Wi-Fi or Bluetooth). LoRa and SMS cannot carry it.';
+
+  @override
+  String get voiceRecording => 'Recording';
+
+  @override
+  String get voiceAtLimit => '30 s at most: recording stopped';
+
+  @override
+  String get voiceDiscard => 'Discard';
+
+  @override
+  String get voiceMicDenied => 'Recording needs access to the microphone.';
+
+  @override
+  String get voiceFailed => 'Recording failed.';
+
+  @override
+  String get voicePlayFailed => 'The message cannot be played.';
+
+  @override
+  String get callAction => 'Call';
+
+  @override
+  String get callNoChannel =>
+      'A call needs SimpleX or Bramble, and the internet or a shared Wi-Fi.';
+
+  @override
+  String get callCalling => 'Calling…';
+
+  @override
+  String get callIncoming => 'Incoming call';
+
+  @override
+  String get callConnecting => 'Connecting…';
+
+  @override
+  String get callEnded => 'Call ended';
+
+  @override
+  String get callDeclinedEnd => 'Call declined';
+
+  @override
+  String get callBusy => 'Busy';
+
+  @override
+  String get callNoAnswer => 'No answer';
+
+  @override
+  String get callFailedEnd => 'The connection failed';
+
+  @override
+  String get callAccept => 'Accept';
+
+  @override
+  String get callDecline => 'Decline';
+
+  @override
+  String get callHangUp => 'Hang up';
+
+  @override
+  String get callMute => 'Mute';
+
+  @override
+  String get callSpeaker => 'Speaker';
+
+  @override
+  String get callDirect => 'Encrypted · direct';
+
+  @override
+  String get callRelayed => 'Encrypted · via a SimpleX relay';
+
+  @override
+  String get callEncrypted => 'Encrypted (DTLS-SRTP)';
+
+  @override
+  String logOut(String length) {
+    return 'Outgoing call $length';
+  }
+
+  @override
+  String logIn(String length) {
+    return 'Incoming call $length';
+  }
+
+  @override
+  String get logMissedIn => 'Missed call';
+
+  @override
+  String get logMissedOut => 'Not answered';
+
+  @override
+  String get logDeclined => 'Declined call';
+
+  @override
+  String get logFailed => 'Call failed';
+
+  @override
+  String get attachPhoto => 'Take a photo';
+
+  @override
+  String get attachPhotoSub =>
+      'Reduced, without location or camera details (EXIF)';
+
+  @override
+  String get attachFile => 'File';
+
+  @override
+  String get attachFileSub => '512 kB at most';
+
+  @override
+  String get attachNoChannel =>
+      'Photos and files need SimpleX or Bramble (internet or Wi-Fi), not Bluetooth, LoRa or SMS.';
+
+  @override
+  String attachTooBig(String size) {
+    return 'The file is $size; 512 kB at most can be sent.';
+  }
+
+  @override
+  String attachSending(String size) {
+    return 'Sending ($size)…';
+  }
+
+  @override
+  String get attachCamDenied => 'Taking photos needs access to the camera.';
+
+  @override
+  String get attachFailed => 'The attachment could not be read.';
+
+  @override
+  String get photoLabel => 'Photo';
+
+  @override
+  String fileLabel(String name, String size) {
+    return 'File $name ($size)';
+  }
+
+  @override
+  String get fileSaved => 'Saved.';
+
+  @override
+  String get fileSaveFailed => 'Saving failed.';
+
+  @override
+  String get attachments => 'ATTACHMENTS';
+
+  @override
+  String get contactInfo => 'Contact info';
+
+  @override
+  String get clearChat => 'Clear chat';
+
+  @override
+  String get clearChatAsk => 'Clear the chat?';
+
+  @override
+  String get clearChatText =>
+      'Deletes this chat\'s messages, reports, voice messages and attachments on this phone only. The contact or team stays.';
+
+  @override
+  String get chatCleared => 'Chat cleared.';
+
+  @override
+  String get statusWithRally => 'Add a RALLY point (place and time)';
+
+  @override
+  String get rallyPlace => 'Rally point';
 }

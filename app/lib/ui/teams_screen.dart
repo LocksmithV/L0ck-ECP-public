@@ -4,9 +4,12 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../data/database.dart';
 import '../l10n/lang.dart';
 import '../messaging/messaging_service.dart';
+import 'attachments.dart';
 import 'group_import.dart';
 import 'message_bubble.dart';
 import 'reports.dart';
+import 'voice.dart';
+import '../platform/voice.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -128,6 +131,28 @@ class _TeamScreenState extends State<TeamScreen> {
     if (mounted) setState(() => _name = n);
   }
   final _text = TextEditingController();
+  bool _voice = false;
+
+  /// The microphone: a voice message when someone of the team can be reached over the
+  /// squad net or SimpleX/Bramble, else it only says why not.
+  Widget _mic() => ValueListenableBuilder<int>(
+        valueListenable: widget.messaging.channelsChanged,
+        builder: (context, _, _) => FutureBuilder<bool>(
+          future: widget.messaging.canSendTeamVoice(widget.team.id),
+          builder: (context, s) {
+            final ok = s.data ?? false;
+            return IconButton(
+              key: const Key('mic'),
+              tooltip: ok ? context.l.voiceRecord : context.l.voiceNoChannel,
+              icon: Icon(Icons.mic_none, color: ok ? L0ckColors.greenLight : L0ckColors.dim),
+              onPressed: ok
+                  ? () => setState(() => _voice = true)
+                  : () => ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(context.l.voiceNoChannel))),
+            );
+          },
+        ),
+      );
 
   @override
   void initState() {
@@ -166,6 +191,32 @@ class _TeamScreenState extends State<TeamScreen> {
     if (t.isEmpty) return;
     _text.clear();
     await widget.messaging.sendTeamText(widget.team.id, t);
+  }
+
+  /// Asks first; then the chat is empty on this phone.
+  Future<void> _clearChat() async {
+    final l = context.l;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: L0ckColors.panel,
+        title: Text(l.clearChatAsk),
+        content: Text(l.clearChatText),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
+          FilledButton(
+            key: const Key('clear-chat-confirm'),
+            style: FilledButton.styleFrom(backgroundColor: L0ckColors.red.withValues(alpha: 0.3)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.clearChat),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await VoiceAudio.stopPlaying().catchError((_) {});
+    await widget.messaging.clearChat(teamId: widget.team.id);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.chatCleared)));
   }
 
   Future<void> _leave() async {
@@ -234,9 +285,14 @@ class _TeamScreenState extends State<TeamScreen> {
           IconButton(tooltip: context.l.teamQr, icon: const Icon(Icons.qr_code), onPressed: _qr),
           PopupMenuButton<String>(
             color: L0ckColors.panel,
-            onSelected: (v) => v == 'rename' ? _rename() : _leave(),
+            onSelected: (v) => switch (v) {
+              'rename' => _rename(),
+              'clear' => _clearChat(),
+              _ => _leave(),
+            },
             itemBuilder: (_) => [
               PopupMenuItem(value: 'rename', child: Text(context.l.renameTeam)),
+              PopupMenuItem(value: 'clear', child: Text(context.l.clearChat)),
               PopupMenuItem(value: 'leave', child: Text(context.l.leaveTeamMenu)),
             ],
           ),
@@ -279,12 +335,28 @@ class _TeamScreenState extends State<TeamScreen> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Row(children: [
+              child: _voice
+                  ? VoiceRecorder(
+                      onSend: (codec, ms, data) => widget.messaging.sendTeamVoice(widget.team.id, codec, ms, data),
+                      onClose: () => setState(() => _voice = false),
+                    )
+                  : Row(children: [
                 IconButton(
                   tooltip: context.l.reportsAndPosition,
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () => showReportMenu(context,
-                      (type, payload) => widget.messaging.sendTeamPayload(widget.team.id, type, payload)),
+                  onPressed: () async {
+                    // Whether a member can be reached for photos and files, asked once
+                    final ok = await widget.messaging.canSendTeamVoice(widget.team.id);
+                    if (!context.mounted) return;
+                    showReportMenu(
+                      context,
+                      (type, payload) => widget.messaging.sendTeamPayload(widget.team.id, type, payload),
+                      attach: AttachActions(
+                        available: () => ok,
+                        send: (a) => widget.messaging.sendTeamAttachment(widget.team.id, a),
+                      ),
+                    );
+                  },
                 ),
                 Expanded(
                   child: TextField(
@@ -293,6 +365,7 @@ class _TeamScreenState extends State<TeamScreen> {
                     onSubmitted: (_) => _send(),
                   ),
                 ),
+                _mic(),
                 IconButton(tooltip: context.l.send, icon: const Icon(Icons.send), onPressed: _send),
               ]),
             ),

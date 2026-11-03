@@ -22,8 +22,15 @@ public class EcpService extends Service {
 	private static final String CHANNEL = "ecp_background";
 	private static final int ID = 1;
 
+	/** Intent extra: a call runs (true) or ended (false) — the microphone may stay on while
+	 *  the screen is off or locked, which Android allows only to a foreground service of the
+	 *  microphone type, started while the app is in view (AudioHost.callAudio). */
+	public static final String EXTRA_CALL = "call";
+	private boolean call;
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (intent != null && intent.hasExtra(EXTRA_CALL)) call = intent.getBooleanExtra(EXTRA_CALL, false);
 		NotificationManager nm = getSystemService(NotificationManager.class);
 		Notification.Builder b;
 		if (Build.VERSION.SDK_INT >= 26) {
@@ -42,7 +49,10 @@ public class EcpService extends Service {
 				.setVisibility(Notification.VISIBILITY_SECRET)
 				.build();
 		if (Build.VERSION.SDK_INT >= 34) {
-			startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING);
+			startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING
+					| (call ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE : 0));
+		} else if (Build.VERSION.SDK_INT >= 30) {
+			startForeground(ID, n, call ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE : 0);
 		} else {
 			startForeground(ID, n);
 		}

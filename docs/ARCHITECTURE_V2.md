@@ -420,6 +420,57 @@ Balíček nese klíče všech týmů, proto jen osobně na základně; stránka 
 `connect-src 'none'`. Shodu formátu hlídá test: `tools/ecp_base/test/bundle_test.js` píše
 fixture, kterou dekóduje `group_bundle_test.dart`.
 
+**0.2.3:** SRAZ už není samostatné hlášení v nabídce; STATUS nese volitelně bod srazu
+a čas (`status · [poloha 13 B] · [bod 13 B · čas u32]`, rozlišené délkou, takže starší
+STATUS i přijaté SRAZ se čtou dál). Chat kontaktu (ⓘ) i týmu (⋮) jde vymazat jen v tomto
+telefonu. Oprava: díly hlasu a souborů se skládají jeden po druhém — dva poslední díly
+naráz (pomalejší telefon) dřív udělaly zprávu dvakrát. Oprava Bramble: modul Bluetooth,
+který nastartoval před udělením „Zařízení v okolí“, se uložil jako vypnutý uživatelem
+(DISABLED/1); vypnutí a zapnutí se teď posílá postupně (správce modulů je zapisuje na
+vlákna, takže souběžně mohlo „vypnout“ vyhrát).
+
+**Fotky a soubory (0.2.2):** v nabídce + v chatu kontaktu i týmu *Vyfotit* a *Soubor*.
+Fotku pořídí systémový fotoaparát do soukromé mezipaměti aplikace (`FileProvider`, jen
+složka `cache/photos`); aplikace ji otočí podle orientace, zmenší na nejvýš 1600 px
+a znovu uloží jako JPEG (tím zmizí celé EXIF včetně polohy) a soubor smaže. Soubor se
+vybírá systémovým výběrem (Storage Access Framework), takže aplikace nepotřebuje přístup
+k úložišti; uložení přijatého souboru jde stejně přes systémový dialog. Oprávnění: jen
+fotoaparát (při focení). `MessageType.file` (0x08): `Attachment` (`druh · název · MIME ·
+data`, nejvýš 512 kB) po dílech `FilePart` 3 kB (`fileId[4] · index u16 · počet u16 ·
+data`), stejně jako hlas: s ACK jen po SimpleX a Bramble přes Tor/LAN, týmům jen členům.
+
+**Hlasové zprávy (0.1.6):** `MessageType.voice` (0x06), `VoicePart` v `ecp_core`:
+`clipId[4] · index · count · codec · délka ms u16 · data`. Nahrávání v Androidu
+(`AudioHost`): Opus v Ogg 8 kbit/s, 16 kHz mono (Android 10+), jinak HE-AAC; nejvýš 30 s
+(≈ 30 kB). Klip se dělí po 3 kB, aby se díl i s obálkou vešel do jedné zprávy Bramble
+(nejvýš 4096 B, `EcpClient.MAX_ENVELOPE_LENGTH`) i SimpleX; větší díly Bramble odmítal a
+zprávy šly přes SimpleX, i když byl Bramble v PACE první.
+Díly jdou s ACK, ale jen po vrstvách P a A (`PaceRouter.send(layers:)`, uloženo v outboxu,
+sloupec `outbox_rows.layers`): nikdy LoRa ani SMS, ani v nouzovém režimu; bez SimpleX
+a Bramble čekají. Bramble jen přes Tor nebo LAN: když má ke kontaktu jen Bluetooth, jde hlas
+jen přes SimpleX (Bluetooth je na hlas pomalý). Týmům jde každý díl jen členům přes P/A,
+ne vysíláním na síť skupiny ani LoRa.
+Příjemce skládá díly v tabulce `voice_parts` (databáze v6) a zprávu ukáže až celou;
+odesílatel má jeden řádek, „doručeno“ až po potvrzení všech dílů. Přehrává se z paměti
+(`MediaDataSource`), nahrávka je v mezipaměti aplikace jen do převzetí. Mikrofon u kontaktu
+i týmu je aktivní, jen když vhodný kanál právě dosáhne příjemce.
+
+**Hovory 1:1 (0.2.0):** zvuk přes WebRTC (`flutter_webrtc` 1.6.2+hotfix.4, Opus,
+DTLS-SRTP, potlačení ozvěny a šumu). Domluva `MessageType.call` (0x07, `CallSignal`:
+`callId[8] · druh · data`) jde v párové obálce ECP jednou zkouškou po P/A (`sendOnce`)
+v pořadí PACE, Bramble jen přes Tor/LAN: nabídka a odpověď SDP i se všemi kandidáty ICE
+(bez trickle), komprimované zlib, aby se vešly do zprávy Bramble, konec s důvodem (zavěšeno,
+odmítnuto, obsazeno, nikdo to nezvedá, chyba). Obálka SDP autentizuje, takže otisky DTLS
+v ní nejde podvrhnout (žádný MITM). ICE: nejdřív přímo (místní síť, STUN
+`stun.simplex.im:443`), když to nejde, přenos přes veřejný TURN SimpleX
+`turns:turn.simplex.im:443` (TLS) se stejnými údaji, jaké používá aplikace SimpleX;
+provozovatel relé vidí IP adresy obou stran, ne zvuk. Volat jde, jen když SimpleX/Bramble
+dosáhne kontaktu a je internet nebo spojení LAN přes Bramble (stejná Wi-Fi). Jeden hovor
+naráz, druhý volající slyší „obsazeno“; zvoní 45 s (oznámení s opakovaným vyzváněním, bez
+jména volajícího), pak zmeškaný hovor. Během hovoru má služba na pozadí typ „mikrofon“
+(hovor jde i se zhasnutou obrazovkou a pod zámkem) a senzor přiblížení zhasíná displej.
+Výsledek hovoru se zapíše do konverzace (místní typ 0x87, nikdy se neposílá).
+
 **Opakovaný balíček a čísla (0.1.5):** načtení balíčku znovu (opravený na základně) zapíše
 jen rozdíly: u známého kontaktu jméno a kanály z karty, které se liší (karta žádný kanál
 nemaže), kanál LoRa a pořadí PACE jen když nesedí. `GroupImport` hlásí kontakty nové,

@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 
 import '../l10n/lang.dart';
 import '../platform/location.dart';
+import 'attachments.dart';
 import 'theme.dart';
+import 'voice.dart';
 
 /// Sends one message of [type] with [payload] to the open conversation (contact or team), or
 /// to recipients picked after the form (home screen).
@@ -67,12 +69,15 @@ class ReportView extends StatelessWidget {
         return _body(context, l.rPosition, L0ckColors.greenLight, const [], Position.decode(payload));
       }
       return switch (Report.decode(payload)) {
-        StatusReport(:final status, :final position) => _body(
-          context,
-          '${l.rStatus}: ${statusLabel(status)}',
-          statusColor(status),
-          const [],
-          position,
+        StatusReport(:final status, :final position, :final rally) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _body(context, '${l.rStatus}: ${statusLabel(status)}', statusColor(status), const [], position),
+            if (rally != null) ...[
+              const Divider(color: L0ckColors.border, height: 14),
+              _body(context, l.rRally, L0ckColors.orange, [l.timeLine(_time(rally.at))], rally.point),
+            ],
+          ],
         ),
         RallyReport(:final point, :final at) => _body(context, l.rRally, L0ckColors.orange, [
           l.timeLine(_time(at)),
@@ -186,9 +191,15 @@ String reportText(int type, Uint8List payload) {
   String t(DateTime d) => ReportView._time(d);
   try {
     if (type == MessageType.position) return '${l.rPosition} ${formatLatLon(Position.decode(payload))}';
+    if (type == MessageType.voice) return l.voiceMessage(voiceLength(VoicePart.decode(payload).durationMs));
+    if (type == MessageType.file) {
+      final a = Attachment.decode(payload);
+      return a.kind == Attachment.photo ? l.photoLabel : l.fileLabel(a.name, sizeLabel(a.bytes.length));
+    }
     return switch (Report.decode(payload)) {
-      StatusReport(:final status, :final position) =>
-        '${l.rStatus} ${statusLabel(status)}${position == null ? '' : ' ${formatLatLon(position)}'}',
+      StatusReport(:final status, :final position, :final rally) =>
+        '${l.rStatus} ${statusLabel(status)}${position == null ? '' : ' ${formatLatLon(position)}'}'
+            '${rally == null ? '' : '\n${l.rRally} ${formatLatLon(rally.point)} ${t(rally.at)}'}',
       RallyReport(:final point, :final at) => '${l.rRally} ${formatLatLon(point)} ${t(at)}',
       SitrepReport(:final state, :final persons, :final position, :final text) =>
         '${l.rSitrep} ${_pick(sitrepStates, state)}, ${l.persons} $persons, ${formatLatLon(position)} $text',
@@ -218,8 +229,9 @@ String reportText(int type, Uint8List payload) {
 
 // --- composing ---
 
-/// The "+" menu in a chat.
-Future<void> showReportMenu(BuildContext context, SendPayload send) => showModalBottomSheet<void>(
+/// The "+" menu in a chat: photo and file (when [attach] is given), then reports.
+Future<void> showReportMenu(BuildContext context, SendPayload send, {AttachActions? attach}) =>
+    showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true, // all eight entries at once; scrolls only on a small screen
   backgroundColor: L0ckColors.panel,
@@ -235,6 +247,23 @@ Future<void> showReportMenu(BuildContext context, SendPayload send) => showModal
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (attach != null) ...[
+              ListTile(title: Text(l.attachments, style: labelStyle)),
+              for (final (icon, title, sub, act) in [
+                (Icons.photo_camera_outlined, l.attachPhoto, l.attachPhotoSub, attachPhoto),
+                (Icons.attach_file, l.attachFile, l.attachFileSub, attachFile),
+              ])
+                ListTile(
+                  leading: Icon(icon, color: attach.available() ? L0ckColors.greenLight : L0ckColors.dim),
+                  title: Text(title),
+                  subtitle: Text(attach.available() ? sub : l.attachNoChannel,
+                      style: const TextStyle(color: L0ckColors.dim)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    act(context, attach);
+                  },
+                ),
+            ],
             ListTile(title: Text(l.reports, style: labelStyle)),
             ListTile(
               leading: const Icon(Icons.my_location, color: L0ckColors.greenLight),
@@ -246,12 +275,6 @@ Future<void> showReportMenu(BuildContext context, SendPayload send) => showModal
               title: Text(l.rStatus),
               subtitle: Text(l.statusSub, style: const TextStyle(color: L0ckColors.dim)),
               onTap: () => open(_StatusForm(send: send)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.place_outlined, color: L0ckColors.orange),
-              title: Text(l.rRally),
-              subtitle: Text(l.rallySub, style: const TextStyle(color: L0ckColors.dim)),
-              onTap: () => open(_RallyForm(send: send)),
             ),
             ListTile(
               leading: const Icon(Icons.assignment_outlined, color: L0ckColors.greenLight),
@@ -435,13 +458,19 @@ class _StatusForm extends StatefulWidget {
 
 class _StatusFormState extends State<_StatusForm> {
   StatusCode _s = StatusCode.ok;
-  Position? _p;
-  bool _withPosition = true;
+  Position? _p, _rallyPoint;
+  bool _withPosition = true, _withRally = false;
+  DateTime _rallyAt = DateTime.now().add(const Duration(minutes: 30));
 
   @override
   Widget build(BuildContext context) => _Form(
     title: context.l.rStatus,
-    onSend: () => widget.send(MessageType.report, StatusReport(_s, _withPosition ? _p : null).encode()),
+    onSend: _withRally && _rallyPoint == null
+        ? null
+        : () => widget.send(
+            MessageType.report,
+            StatusReport(_s, _withPosition ? _p : null, _withRally ? (point: _rallyPoint!, at: _rallyAt) : null)
+                .encode()),
     children: [
       for (final s in StatusCode.values)
         Padding(
@@ -464,31 +493,21 @@ class _StatusFormState extends State<_StatusForm> {
         title: Text(context.l.attachPosition),
       ),
       if (_withPosition) _PositionPicker(onChanged: (p) => setState(() => _p = p)),
-    ],
-  );
-}
-
-class _RallyForm extends StatefulWidget {
-  const _RallyForm({required this.send});
-  final SendPayload send;
-
-  @override
-  State<_RallyForm> createState() => _RallyFormState();
-}
-
-class _RallyFormState extends State<_RallyForm> {
-  Position? _p;
-  DateTime _at = DateTime.now().add(const Duration(minutes: 30));
-
-  @override
-  Widget build(BuildContext context) => _Form(
-    title: context.l.rRally,
-    onSend: _p == null ? null : () => widget.send(MessageType.report, RallyReport(_p!, _at).encode()),
-    children: [
-      _PositionPicker(onChanged: (p) => setState(() => _p = p)),
-      const SizedBox(height: 12),
-      Text(context.l.rallyTime(ReportView._time(_at)), style: const TextStyle(color: L0ckColors.data)),
-      _TimePicker(value: _at, quick: const [15, 30, 60, 120], onChanged: (t) => setState(() => _at = t)),
+      // SRAZ: where and when to meet, in the same report
+      SwitchListTile(
+        key: const Key('status-rally'),
+        contentPadding: EdgeInsets.zero,
+        value: _withRally,
+        onChanged: (v) => setState(() => _withRally = v),
+        title: Text(context.l.statusWithRally),
+      ),
+      if (_withRally) ...[
+        Text(context.l.rallyPlace, style: labelStyle),
+        _PositionPicker(onChanged: (p) => setState(() => _rallyPoint = p)),
+        const SizedBox(height: 12),
+        Text(context.l.rallyTime(ReportView._time(_rallyAt)), style: const TextStyle(color: L0ckColors.data)),
+        _TimePicker(value: _rallyAt, quick: const [15, 30, 60, 120], onChanged: (t) => setState(() => _rallyAt = t)),
+      ],
     ],
   );
 }

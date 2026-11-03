@@ -89,6 +89,7 @@ class OutboxEntry {
     this.deadline,
     this.smsApproved = false,
     List<String>? tried,
+    this.layers,
   }) : tried = tried ?? [];
 
   final String id;
@@ -101,6 +102,9 @@ class OutboxEntry {
   DateTime? deadline;
   bool smsApproved;
   final List<String> tried;
+
+  /// The only layers this message may use (voice: SimpleX and Bramble); null: all of them.
+  final Set<PaceLayer>? layers;
 }
 
 abstract class OutboxStore {
@@ -213,12 +217,14 @@ class PaceRouter {
 
   // --- sending ---
 
-  /// Sends to one contact with ACK. Returns the message id (hex).
+  /// Sends to one contact with ACK. Returns the message id (hex). [layers] keeps it to those
+  /// layers (in PACE order); it waits when none of them reaches the contact.
   Future<String> send(
     String contactId,
     int type,
     List<int> payload, {
     bool emergency = false,
+    Set<PaceLayer>? layers,
     required DateTime now,
   }) async {
     final pair = keys.pairs[contactId];
@@ -236,6 +242,7 @@ class PaceRouter {
           kind: EnvelopeKind.pair, key: pair.send, message: msg, now: now),
       createdAt: now,
       emergency: emergency,
+      layers: layers,
     );
     _outbox[entry.id] = entry;
     await _advance(entry, now);
@@ -268,11 +275,13 @@ class PaceRouter {
   /// As [sendTeam], and the same envelope also goes to each of [members] (contact ids) over
   /// the first available of [fanOut] — store-and-forward channels, so members out of radio
   /// range get it too. Duplicates are dropped by id at the receiver. Returns the message id
-  /// and the transports used.
+  /// and the transports used. Without [broadcast] it goes to [members] only (voice: not on
+  /// the squad net or LoRa).
   Future<({String id, Set<String> via})> sendTeamTo(String teamId, int type, List<int> payload,
       {required DateTime now,
       Iterable<String> members = const [],
-      Set<PaceLayer> fanOut = const {PaceLayer.primary, PaceLayer.alternate}}) async {
+      Set<PaceLayer> fanOut = const {PaceLayer.primary, PaceLayer.alternate},
+      bool broadcast = true}) async {
     final key = keys.teams[teamId];
     if (key == null) throw ArgumentError('no key for team $teamId');
     final msg = InnerMessage.create(
@@ -281,7 +290,7 @@ class PaceRouter {
         await EcpEnvelope.seal(kind: EnvelopeKind.team, key: key, message: msg, now: now);
     replay.accept(msg, now: now); // our own echo coming back must not be relayed again
     final via = <String>{};
-    for (final t in transports.where((t) => t.isAvailable)) {
+    for (final t in transports.where((t) => broadcast && t.isAvailable)) {
       final ok = t.layer == null
           ? await t.broadcast(_squadFrame(maxSquadTtl, env))
           : await t.broadcast(env);
@@ -355,6 +364,7 @@ class PaceRouter {
     final order = profile.order;
     for (var i = e.layerIndex; i < order.length; i++) {
       final layer = order[i];
+      if (e.layers != null && !e.layers!.contains(layer)) continue;
       final candidates = transports
           .where((t) => t.layer == layer && t.isAvailable && t.canReach(e.contactId))
           .toList();
@@ -395,7 +405,7 @@ class PaceRouter {
   /// timeout until an ACK arrives.
   Future<void> _flood(OutboxEntry e, DateTime now) async {
     var any = false;
-    for (final t in transports.where((t) => t.layer != null)) {
+    for (final t in transports.where((t) => t.layer != null && (e.layers?.contains(t.layer) ?? true))) {
       if (!t.isAvailable || !t.canReach(e.contactId)) continue;
       if (await t.sendTo(e.contactId, e.envelope)) {
         any = true;

@@ -961,10 +961,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get myPosition => 'Moje poloha';
 
   @override
-  String get statusSub => 'v pořádku, pomoc, zraněn…';
-
-  @override
-  String get rallySub => 'místo a čas setkání';
+  String get statusSub => 'v pořádku, pomoc, zraněn… a SRAZ';
 
   @override
   String get sitrepSub => 'stav, počet osob, krátký text';
@@ -1469,4 +1466,183 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get groupNoChange =>
       'Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo.';
+
+  @override
+  String voiceMessage(String length) {
+    return 'Hlasová zpráva $length';
+  }
+
+  @override
+  String get voiceRecord => 'Hlasová zpráva';
+
+  @override
+  String get voiceNoChannel =>
+      'Hlasová zpráva potřebuje SimpleX nebo Bramble (internet, Wi-Fi nebo Bluetooth). LoRa a SMS ji neunesou.';
+
+  @override
+  String get voiceRecording => 'Nahrávám';
+
+  @override
+  String get voiceAtLimit => 'Nejvýš 30 s: nahrávání skončilo';
+
+  @override
+  String get voiceDiscard => 'Zahodit';
+
+  @override
+  String get voiceMicDenied => 'Bez přístupu k mikrofonu nejde nahrávat.';
+
+  @override
+  String get voiceFailed => 'Nahrávání se nepovedlo.';
+
+  @override
+  String get voicePlayFailed => 'Zprávu nejde přehrát.';
+
+  @override
+  String get callAction => 'Volat';
+
+  @override
+  String get callNoChannel =>
+      'Hovor potřebuje SimpleX nebo Bramble a k tomu internet nebo společnou Wi-Fi.';
+
+  @override
+  String get callCalling => 'Volám…';
+
+  @override
+  String get callIncoming => 'Příchozí hovor';
+
+  @override
+  String get callConnecting => 'Spojuji…';
+
+  @override
+  String get callEnded => 'Hovor skončil';
+
+  @override
+  String get callDeclinedEnd => 'Hovor odmítnut';
+
+  @override
+  String get callBusy => 'Obsazeno';
+
+  @override
+  String get callNoAnswer => 'Nikdo to nezvedá';
+
+  @override
+  String get callFailedEnd => 'Spojení se nepodařilo';
+
+  @override
+  String get callAccept => 'Přijmout';
+
+  @override
+  String get callDecline => 'Odmítnout';
+
+  @override
+  String get callHangUp => 'Zavěsit';
+
+  @override
+  String get callMute => 'Ztlumit';
+
+  @override
+  String get callSpeaker => 'Reproduktor';
+
+  @override
+  String get callDirect => 'Šifrováno · přímé spojení';
+
+  @override
+  String get callRelayed => 'Šifrováno · přes server SimpleX';
+
+  @override
+  String get callEncrypted => 'Šifrováno (DTLS-SRTP)';
+
+  @override
+  String logOut(String length) {
+    return 'Odchozí hovor $length';
+  }
+
+  @override
+  String logIn(String length) {
+    return 'Příchozí hovor $length';
+  }
+
+  @override
+  String get logMissedIn => 'Zmeškaný hovor';
+
+  @override
+  String get logMissedOut => 'Nepřijatý hovor';
+
+  @override
+  String get logDeclined => 'Odmítnutý hovor';
+
+  @override
+  String get logFailed => 'Hovor se nepodařil';
+
+  @override
+  String get attachPhoto => 'Vyfotit';
+
+  @override
+  String get attachPhotoSub =>
+      'Zmenšená, bez polohy a údajů o fotoaparátu (EXIF)';
+
+  @override
+  String get attachFile => 'Soubor';
+
+  @override
+  String get attachFileSub => 'Nejvýš 512 kB';
+
+  @override
+  String get attachNoChannel =>
+      'Fotky a soubory potřebují SimpleX nebo Bramble (internet nebo Wi-Fi), ne Bluetooth, LoRa ani SMS.';
+
+  @override
+  String attachTooBig(String size) {
+    return 'Soubor má $size, poslat jde nejvýš 512 kB.';
+  }
+
+  @override
+  String attachSending(String size) {
+    return 'Odesílám ($size)…';
+  }
+
+  @override
+  String get attachCamDenied => 'Bez přístupu k fotoaparátu nejde fotit.';
+
+  @override
+  String get attachFailed => 'Přílohu se nepodařilo načíst.';
+
+  @override
+  String get photoLabel => 'Fotografie';
+
+  @override
+  String fileLabel(String name, String size) {
+    return 'Soubor $name ($size)';
+  }
+
+  @override
+  String get fileSaved => 'Uloženo.';
+
+  @override
+  String get fileSaveFailed => 'Uložení se nepovedlo.';
+
+  @override
+  String get attachments => 'PŘÍLOHY';
+
+  @override
+  String get contactInfo => 'Informace o kontaktu';
+
+  @override
+  String get clearChat => 'Vymazat chat';
+
+  @override
+  String get clearChatAsk => 'Vymazat obsah chatu?';
+
+  @override
+  String get clearChatText =>
+      'Smaže zprávy, hlášení, hlasové zprávy a přílohy tohoto chatu jen na tomto telefonu. Kontakt nebo tým zůstane.';
+
+  @override
+  String get chatCleared => 'Chat vymazán.';
+
+  @override
+  String get statusWithRally => 'Přidat SRAZ (místo a čas)';
+
+  @override
+  String get rallyPlace => 'Místo srazu';
 }

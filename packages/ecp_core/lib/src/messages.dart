@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io' show zlib;
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'bytes.dart';
@@ -11,6 +13,262 @@ abstract final class MessageType {
   static const report = 0x03;
   static const ack = 0x04;
   static const control = 0x05; // reserved: key rotation, team key over P/A
+  static const voice = 0x06; // VoicePart: SimpleX / Bramble only, never LoRa or SMS
+  static const call = 0x07; // CallSignal: call set-up over SimpleX / Bramble
+  static const file = 0x08; // FilePart: a photo or file, SimpleX / Bramble only
+}
+
+/// A photo or file in a chat (MessageType.file): [kind], name, MIME type and the bytes. On
+/// the wire it travels as [FilePart]s; the message row holds it whole.
+///
+/// `kind u8 · name (u8 length) · mime (u8 length) · bytes`
+class Attachment {
+  Attachment({required this.kind, required this.name, required this.mime, required this.bytes}) {
+    if (kind != photo && kind != file) throw ArgumentError('unknown attachment kind');
+    if (utf8.encode(name).length > 255 || utf8.encode(mime).length > 255) throw ArgumentError('name too long');
+  }
+
+  static const photo = 1, file = 2;
+
+  /// Largest attachment: about 170 parts, a minute or two over Tor.
+  static const maxBytes = 512 * 1024;
+
+  final int kind;
+  final String name, mime;
+  final Uint8List bytes;
+
+  Uint8List encode() {
+    final n = utf8.encode(name), m = utf8.encode(mime);
+    return (ByteWriter()
+          ..u8(kind)
+          ..u8(n.length)
+          ..bytes(n)
+          ..u8(m.length)
+          ..bytes(m)
+          ..bytes(bytes))
+        .toBytes();
+  }
+
+  static Attachment decode(List<int> b) {
+    try {
+      final r = ByteReader(b);
+      final kind = r.u8();
+      final name = utf8.decode(r.take(r.u8()));
+      final mime = utf8.decode(r.take(r.u8()));
+      return Attachment(kind: kind, name: name, mime: mime, bytes: r.rest());
+    } on Object {
+      throw const FormatException('invalid attachment');
+    }
+  }
+}
+
+/// One part of an [Attachment] on the wire (MessageType.file), at most [maxData] bytes so it
+/// fits one Bramble message (4 KB with the envelope).
+///
+/// `fileId[4] · index u16 (1..count) · count u16 · data`
+class FilePart {
+  FilePart({required this.fileId, required this.index, required this.count, required this.data}) {
+    if (fileId.length != 4) throw ArgumentError('file id must be 4 bytes');
+    if (count < 1 || count > 0xffff || index < 1 || index > count) throw ArgumentError('bad part');
+  }
+
+  static const maxData = 3 * 1024;
+  static const headerLength = 8;
+
+  final Uint8List fileId;
+  final int index, count;
+  final Uint8List data;
+
+  String get fileHex => toHex(fileId);
+
+  Uint8List encode() => (ByteWriter()
+        ..bytes(fileId)
+        ..u16(index)
+        ..u16(count)
+        ..bytes(data))
+      .toBytes();
+
+  static FilePart decode(List<int> b) {
+    if (b.length < headerLength) throw const FormatException('file part too short');
+    try {
+      final r = ByteReader(b);
+      return FilePart(fileId: r.take(4), index: r.u16(), count: r.u16(), data: r.rest());
+    } on ArgumentError catch (e) {
+      throw FormatException('invalid file part: ${e.message}');
+    }
+  }
+
+  static List<FilePart> split(Uint8List fileId, Uint8List blob) {
+    final n = blob.isEmpty ? 1 : (blob.length + maxData - 1) ~/ maxData;
+    return [
+      for (var i = 0; i < n; i++)
+        FilePart(
+          fileId: fileId,
+          index: i + 1,
+          count: n,
+          data: Uint8List.sublistView(blob, i * maxData, math.min((i + 1) * maxData, blob.length)),
+        ),
+    ];
+  }
+
+  /// The whole blob from all [parts] (any order).
+  static Uint8List join(List<FilePart> parts) {
+    if (parts.isEmpty) throw ArgumentError('no parts');
+    final first = parts.first;
+    final byIndex = {for (final p in parts) p.index: p};
+    if (byIndex.length != first.count || parts.any((p) => p.fileHex != first.fileHex || p.count != first.count)) {
+      throw ArgumentError('parts missing or mixed');
+    }
+    final b = BytesBuilder(copy: false);
+    for (var i = 1; i <= first.count; i++) {
+      b.add(byIndex[i]!.data);
+    }
+    return b.toBytes();
+  }
+}
+
+/// Setting up and ending a 1:1 call (MessageType.call), always inside a pair envelope over
+/// SimpleX or Bramble: the WebRTC offer/answer (SDP, with every ICE candidate in it) is
+/// authenticated by the envelope, so the DTLS fingerprints in it cannot be swapped.
+///
+/// `callId[8] · kind u8 · data (zlib-compressed SDP for offer/answer — so it fits one
+/// Bramble message —, one reason byte for end)`
+class CallSignal {
+  CallSignal({required this.callId, required this.kind, Uint8List? data}) : data = data ?? Uint8List(0) {
+    if (callId.length != 8) throw ArgumentError('call id must be 8 bytes');
+    if (kind < offer || kind > end) throw ArgumentError('unknown call signal $kind');
+  }
+
+  static const offer = 1, answer = 2, end = 3;
+
+  /// Why a call ended ([end] data).
+  static const hangUp = 0, declined = 1, busy = 2, noAnswer = 3, failed = 4;
+
+  final Uint8List callId;
+  final int kind;
+  final Uint8List data;
+
+  String get callHex => toHex(callId);
+
+  factory CallSignal.sdp(Uint8List callId, int kind, String sdp) =>
+      CallSignal(callId: callId, kind: kind, data: Uint8List.fromList(zlib.encode(utf8.encode(sdp))));
+
+  factory CallSignal.ended(Uint8List callId, int reason) =>
+      CallSignal(callId: callId, kind: end, data: Uint8List.fromList([reason]));
+
+  /// Throws [FormatException] when it is not compressed SDP.
+  String get sdp {
+    try {
+      return utf8.decode(zlib.decode(data));
+    } on Object {
+      throw const FormatException('bad SDP');
+    }
+  }
+  int get reason => data.isEmpty ? hangUp : data[0];
+
+  Uint8List encode() => (ByteWriter()
+        ..bytes(callId)
+        ..u8(kind)
+        ..bytes(data))
+      .toBytes();
+
+  static CallSignal decode(List<int> b) {
+    if (b.length < 9) throw const FormatException('call signal too short');
+    try {
+      final r = ByteReader(b);
+      return CallSignal(callId: r.take(8), kind: r.u8(), data: r.rest());
+    } on ArgumentError catch (e) {
+      throw FormatException('invalid call signal: ${e.message}');
+    }
+  }
+}
+
+/// One part of a voice message (MessageType.voice). A clip is cut into parts of at most
+/// [maxData] bytes, so each fits one Bramble message (4 KB with the envelope) and one
+/// SimpleX message; the receiver shows it once every part is in. At most [maxDuration]
+/// long.
+///
+/// `clipId[4] · index u8 (1..count) · count u8 · codec u8 · duration ms u16 · data`
+class VoicePart {
+  VoicePart({
+    required this.clipId,
+    required this.index,
+    required this.count,
+    required this.codec,
+    required this.durationMs,
+    required this.data,
+  }) {
+    if (clipId.length != 4) throw ArgumentError('clip id must be 4 bytes');
+    if (count < 1 || count > maxParts || index < 1 || index > count) throw ArgumentError('bad part');
+    if (durationMs < 0 || durationMs > 0xffff) throw ArgumentError('bad duration');
+  }
+
+  static const maxData = 3 * 1024;
+  static const maxParts = 64;
+  static const maxDuration = Duration(seconds: 30);
+  static const headerLength = 9;
+
+  /// Opus in Ogg (Android 10+), AAC in ADTS (older phones).
+  static const opus = 1, aac = 2;
+
+  final Uint8List clipId;
+  final int index, count, codec, durationMs;
+  final Uint8List data;
+
+  String get clipHex => toHex(clipId);
+
+  Uint8List encode() => (ByteWriter()
+        ..bytes(clipId)
+        ..u8(index)
+        ..u8(count)
+        ..u8(codec)
+        ..u16(durationMs)
+        ..bytes(data))
+      .toBytes();
+
+  static VoicePart decode(List<int> b) {
+    if (b.length < headerLength) throw const FormatException('voice part too short');
+    final r = ByteReader(b);
+    try {
+      return VoicePart(
+          clipId: r.take(4), index: r.u8(), count: r.u8(), codec: r.u8(), durationMs: r.u16(), data: r.rest());
+    } on ArgumentError catch (e) {
+      throw FormatException('invalid voice part: ${e.message}');
+    }
+  }
+
+  /// Cuts a recorded clip into parts (one when it is small enough).
+  static List<VoicePart> split(Uint8List clipId, int codec, int durationMs, Uint8List audio) {
+    final n = audio.isEmpty ? 1 : (audio.length + maxData - 1) ~/ maxData;
+    if (n > maxParts) throw ArgumentError('clip too long');
+    return [
+      for (var i = 0; i < n; i++)
+        VoicePart(
+          clipId: clipId,
+          index: i + 1,
+          count: n,
+          codec: codec,
+          durationMs: durationMs,
+          data: Uint8List.sublistView(audio, i * maxData, math.min((i + 1) * maxData, audio.length)),
+        ),
+    ];
+  }
+
+  /// The whole clip again from all [parts] (any order), as one part with count 1.
+  static VoicePart join(List<VoicePart> parts) {
+    if (parts.isEmpty) throw ArgumentError('no parts');
+    final first = parts.first;
+    final byIndex = {for (final p in parts) p.index: p};
+    if (byIndex.length != first.count || parts.any((p) => p.clipHex != first.clipHex || p.count != first.count)) {
+      throw ArgumentError('parts missing or mixed');
+    }
+    final b = BytesBuilder(copy: false);
+    for (var i = 1; i <= first.count; i++) {
+      b.add(byIndex[i]!.data);
+    }
+    return VoicePart(
+        clipId: first.clipId, index: 1, count: 1, codec: first.codec, durationMs: first.durationMs, data: b.toBytes());
+  }
 }
 
 /// 13-byte position: small enough that a report plus envelope fits one SMS / LoRa packet.
@@ -164,11 +422,15 @@ sealed class Report {
   }
 }
 
+/// STATUS, with the own [position] and a rally point (SRAZ: place and time), both optional.
+/// `status u8 · [position 13 B] · [rally point 13 B · time u32]` — told apart by length, so
+/// a status without the rally reads as before.
 class StatusReport extends Report {
-  const StatusReport(this.status, [this.position]);
+  const StatusReport(this.status, [this.position, this.rally]);
 
   final StatusCode status;
   final Position? position;
+  final ({Position point, DateTime at})? rally;
 
   @override
   int get templateId => ReportTemplate.status;
@@ -177,11 +439,21 @@ class StatusReport extends Report {
   void _writeFields(ByteWriter w) {
     w.u8(status.code);
     position?.writeTo(w);
+    if (rally case final r?) {
+      r.point.writeTo(w);
+      w.u32(ecpTime(r.at));
+    }
   }
 
   static StatusReport _read(ByteReader r) {
     final status = StatusCode.fromCode(r.u8());
-    return StatusReport(status, r.remaining > 0 ? Position.readFrom(r) : null);
+    final rest = r.remaining;
+    if (rest != 0 && rest != Position.length && rest != Position.length + 4 && rest != 2 * Position.length + 4) {
+      throw const FormatException('bad status length');
+    }
+    final position = rest == Position.length || rest == 2 * Position.length + 4 ? Position.readFrom(r) : null;
+    final rally = r.remaining == Position.length + 4 ? (point: Position.readFrom(r), at: fromEcpTime(r.u32())) : null;
+    return StatusReport(status, position, rally);
   }
 }
 

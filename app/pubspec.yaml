@@ -1,7 +1,7 @@
 name: l0ck_ecp
 description: "L0ck-ECP — encrypted emergency coordination over several channels (PACE)."
 publish_to: 'none'
-version: 0.1.5+6
+version: 0.2.3+11
 
 environment:
   sdk: ^3.13.7
@@ -19,6 +19,8 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  # 1:1 calls (WebRTC: DTLS-SRTP audio); pinned, see docs/ARCHITECTURE_V2.md
+  flutter_webrtc: 1.6.2+hotfix.4
   intl: any
   path: ^1.9.1
   path_provider: ^2.1.6

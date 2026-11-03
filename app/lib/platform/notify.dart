@@ -13,4 +13,9 @@ abstract final class Notifications {
       const MethodChannel('cz.l0ck.ecp/activity').invokeMethod<String>('takeOpen');
 
   static Future<void> clear() => _m.invokeMethod('clear');
+
+  /// An incoming call rings with [text] (no caller shown); a tap opens the app at `k:CONTACT_ID`.
+  static Future<void> call(String text, {String? open}) => _m.invokeMethod('call', {'text': text, 'open': open});
+
+  static Future<void> callEnd() => _m.invokeMethod('callEnd');
 }

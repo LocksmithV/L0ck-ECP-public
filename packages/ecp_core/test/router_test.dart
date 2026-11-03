@@ -354,6 +354,28 @@ void main() {
     expect(alice.router.outbox, isEmpty);
   });
 
+  test('a message kept to P/A (voice) waits instead of LoRa or SMS, also in an emergency', () async {
+    alice.transport('simplex').available = false;
+    alice.transport('bramble').available = false;
+    final id = await alice.router.send('bob', MessageType.voice, [1, 2, 3],
+        layers: {PaceLayer.primary, PaceLayer.alternate}, now: t0);
+    await alice.router.send('bob', MessageType.voice, [4],
+        layers: {PaceLayer.primary, PaceLayer.alternate}, emergency: true, now: t0);
+    expect(alice.transport('lora').sends + alice.transport('sms').sends, 0);
+    expect(alice.events.whereType<ConfirmationNeeded>(), isEmpty, reason: 'no SMS question either');
+    expect(alice.events.whereType<MessageWaiting>().map((e) => e.id), contains(id));
+
+    // Bramble comes back: it goes there; no ACK in time on the last allowed layer → waits
+    alice.transport('bramble')
+      ..available = true
+      ..lossy = true;
+    await alice.router.availabilityChanged(t0);
+    final later = t0.add(const Duration(minutes: 3));
+    await alice.router.tick(later);
+    expect(alice.transport('lora').sends + alice.transport('sms').sends, 0);
+    expect(alice.router.outbox.firstWhere((e) => e.id == id).state, OutboxState.waiting);
+  });
+
   test('reordered PACE: LoRa before Tor', () async {
     alice.router.profile = PaceProfile('custom', [
       PaceLayer.primary,

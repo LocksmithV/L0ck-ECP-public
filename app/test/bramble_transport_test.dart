@@ -163,6 +163,29 @@ void main() {
     expect((await adb.select(adb.messages).getSingle()).via, 'bramble');
   });
 
+  test('voice: not over a Bluetooth link alone; over Tor or the LAN it goes by Bramble', () async {
+    Net.online.value = false;
+    addTearDown(() => Net.online.value = true);
+    final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+    await bob.addContactFromUri(alice.myContactUri());
+    await until(() async => ba.contactLinks.isNotEmpty && bb.contactLinks.isNotEmpty);
+    final links = alice.transport<BrambleTransport>()!;
+    ba.link(bb, 'bluetooth', true);
+    await until(() async => links.linksTo('${a.contact.id}').contains('bluetooth'));
+    expect(links.canReach('${a.contact.id}'), isTrue, reason: 'texts may still go by Bluetooth');
+    expect(alice.canSendVoice(a.contact.id), isFalse, reason: 'Bluetooth only');
+    expect(alice.canCall(a.contact.id), isFalse);
+    // A voice part fits one Bramble message: sent on the LAN it arrives by Bramble
+    ba.link(bb, 'lan', true);
+    await until(() async => links.linksTo('${a.contact.id}').contains('lan'));
+    expect(alice.canSendVoice(a.contact.id), isTrue);
+    await alice.sendVoice(a.contact.id, VoicePart.opus, 3000, Uint8List(5000));
+    final bdb = bob.session.db;
+    await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+    final got = (await bdb.select(bdb.messages).get()).single;
+    expect((got.type, got.via), (MessageType.voice, 'bramble'));
+  });
+
   test('cards swapped in person become Bramble contacts and a text goes over layer A', () async {
     final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
     await bob.addContactFromUri(alice.myContactUri());

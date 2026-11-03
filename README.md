@@ -16,7 +16,7 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The current test build **L0ck-ECP_v0.1.5.apk** is under [Releases](../../releases)
+The current test build **L0ck-ECP_v0.2.3.apk** is under [Releases](../../releases)
 (Android 8.0+, arm64), with its SHA-256 checksum.
 
 ### One message, several paths (PACE)
@@ -42,7 +42,14 @@ its time, delivery and read state. Public MeshCore channels are ignored.
   of the own phone number (e.g. a local SIM) reaches the contacts automatically.
 - **Teams:** create and join with a team QR code, team conversation, a local squad net over
   Wi-Fi/Bluetooth, a private LoRa channel, delivery to members out of range as well.
-- **Standardised reports:** position, STATUS, RALLY (place and time), SITREP, MEDEVAC
+- **Voice, calls, photos and files** — only over SimpleX or Bramble by Tor/Wi-Fi, never
+  Bluetooth, LoRa or SMS, and offered only while such a channel reaches the other side:
+  voice messages up to 30 s (Opus) to a contact or a team; encrypted 1:1 calls (WebRTC,
+  DTLS-SRTP; set up inside an ECP envelope, audio directly or through a SimpleX relay);
+  photos reduced and stripped of EXIF (GPS) and files up to 512 kB from the system picker
+  (no storage permission). A chat can be cleared on the phone.
+- **Standardised reports:** position, STATUS (optionally with a RALLY point: place and
+  time), SITREP, MEDEVAC
   9-line, SALTER (observation), 5W (who, what, where, when, why). Compact — each fits one
   LoRa packet and at most two SMS. GPS position without Google services; the receiver sees
   the coordinates, distance and bearing, and can open the point in an offline map
@@ -116,6 +123,7 @@ Components and their licenses:
 | [Briar / Bramble](https://code.briarproject.org/briar/briar) 1.5.24 | GPLv3 |
 | [SimpleX Chat](https://github.com/simplex-chat/simplex-chat) core 7.0.3 | AGPLv3 |
 | [ZXing Android Embedded](https://github.com/journeyapps/zxing-android-embedded) | Apache 2.0 |
+| [flutter_webrtc](https://github.com/flutter-webrtc/flutter-webrtc) 1.6.2 with [WebRTC](https://webrtc.org) | MIT / BSD |
 | [jsQR](https://github.com/cozmo/jsQR) 1.4.0 (base page) | Apache 2.0 |
 | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (base page) | MIT |
 | [SQLCipher](https://www.zetetic.net/sqlcipher/) (via `sqlite3`) | BSD-style |
@@ -150,7 +158,7 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Aktuální testovací sestavení **L0ck-ECP_v0.1.5.apk** je v [Releases](../../releases)
+Aktuální testovací sestavení **L0ck-ECP_v0.2.3.apk** je v [Releases](../../releases)
 (Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání.
 
 ### Jedna zpráva, víc cest (PACE)
@@ -175,8 +183,14 @@ Veřejné kanály MeshCore aplikace ignoruje.
   telefonního čísla (např. místní SIM) se kontaktům rozešle sama.
 - **Týmy:** založení a připojení přes týmové QR, týmová konverzace, místní síť skupiny
   přes Wi-Fi/Bluetooth, soukromý kanál LoRa, rozeslání i členům mimo dosah.
-- **Standardizovaná hlášení:** poloha, STATUS, SRAZ (místo a čas), SITREP, MEDEVAC 9-line,
-  SALTER (pozorování), 5W (kdo, co, kde, kdy, proč). Kompaktní — vejdou se do jednoho LoRa
+- **Hlas, hovory, fotky a soubory** — jen přes SimpleX nebo Bramble přes Tor/Wi-Fi, nikdy
+  Bluetooth, LoRa ani SMS, a nabízené jen, když takový kanál protistranu právě dosáhne:
+  hlasové zprávy do 30 s (Opus) kontaktu i týmu; šifrované hovory 1:1 (WebRTC, DTLS-SRTP;
+  domluva uvnitř obálky ECP, zvuk přímo nebo přes relé SimpleX); fotky zmenšené a bez
+  EXIF (GPS) a soubory do 512 kB ze systémového výběru (bez oprávnění k úložišti). Chat
+  jde v telefonu vymazat.
+- **Standardizovaná hlášení:** poloha, STATUS (volitelně se SRAZEM: místo a čas), SITREP,
+  MEDEVAC 9-line, SALTER (pozorování), 5W (kdo, co, kde, kdy, proč). Kompaktní — vejdou se do jednoho LoRa
   paketu a nejvýš dvou SMS. Poloha z GPS bez služeb Google; příjemce vidí souřadnice,
   vzdálenost a azimut a může bod otevřít v offline mapě (OsmAnd, Organic Maps). Hlášení
   jde z úvodní obrazovky poslat týmu i více kontaktům najednou.
@@ -248,6 +262,7 @@ Použité komponenty a jejich licence:
 | [Briar / Bramble](https://code.briarproject.org/briar/briar) 1.5.24 | GPLv3 |
 | [SimpleX Chat](https://github.com/simplex-chat/simplex-chat) core 7.0.3 | AGPLv3 |
 | [ZXing Android Embedded](https://github.com/journeyapps/zxing-android-embedded) | Apache 2.0 |
+| [flutter_webrtc](https://github.com/flutter-webrtc/flutter-webrtc) 1.6.2 s [WebRTC](https://webrtc.org) | MIT / BSD |
 | [jsQR](https://github.com/cozmo/jsQR) 1.4.0 (stránka základny) | Apache 2.0 |
 | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (stránka základny) | MIT |
 | [SQLCipher](https://www.zetetic.net/sqlcipher/) (přes `sqlite3`) | BSD-style |

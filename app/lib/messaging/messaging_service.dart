@@ -6,6 +6,7 @@ import 'package:ecp_core/ecp_core.dart';
 import 'package:ecp_meshcore/ecp_meshcore.dart' show MeshCoreTransport;
 
 import '../data/database.dart';
+import '../platform/net.dart';
 import '../security/lock_config.dart';
 import '../security/security_service.dart';
 import 'bramble_transport.dart';
@@ -34,6 +35,7 @@ class DriftOutboxStore implements OutboxStore {
           deadline: Value(e.deadline),
           smsApproved: e.smsApproved,
           tried: e.tried.join(','),
+          layers: Value(e.layers?.map((l) => l.name).join(',')),
         ),
       );
 
@@ -55,6 +57,7 @@ class DriftOutboxStore implements OutboxStore {
             deadline: r.deadline,
             smsApproved: r.smsApproved,
             tried: r.tried.isEmpty ? [] : r.tried.split(','),
+            layers: r.layers == null ? null : {for (final n in r.layers!.split(',')) PaceLayer.values.byName(n)},
           ),
       ];
 }
@@ -194,6 +197,9 @@ class MessagingService {
       s._bind(t);
     }
     await s._contactsChanged();
+    // Voice clips whose other parts never came (the sender gives up after a day too)
+    await (db.delete(db.voiceParts)..where((t) => t.at.isSmallerThanValue(DateTime.now().subtract(const Duration(days: 1)))))
+        .go();
     s._ticker = Timer.periodic(const Duration(seconds: 5), (_) => s._tick());
     return s;
   }
@@ -557,6 +563,19 @@ class MessagingService {
   Future<void> renameContact(int id, String name) =>
       (_db.update(_db.contacts)..where((t) => t.id.equals(id))).write(ContactsCompanion(name: Value(name)));
 
+  /// Clears a chat on this phone only: its messages and any voice or file parts still coming
+  /// in. The contact or team stays; nothing is sent.
+  Future<void> clearChat({int? contactId, String? teamId}) async {
+    if (contactId != null) {
+      await (_db.delete(_db.messages)..where((t) => t.contactId.equals(contactId))).go();
+      await (_db.delete(_db.voiceParts)..where((t) => t.clip.like('c:$contactId:%'))).go();
+    }
+    if (teamId != null) {
+      await (_db.delete(_db.messages)..where((t) => t.teamId.equals(teamId))).go();
+      await (_db.delete(_db.voiceParts)..where((t) => t.clip.like('t:$teamId:%'))).go();
+    }
+  }
+
   /// Forgets a contact: messages, team memberships, keys, and the Bramble contact.
   Future<void> deleteContact(int id) async {
     await (_db.delete(_db.messages)..where((t) => t.contactId.equals(id))).go();
@@ -812,6 +831,224 @@ class MessagingService {
     return id;
   }
 
+  // --- calls (CallService) ---
+
+  /// Local-only message type: a call in the conversation (who called, how it ended, how
+  /// long). Payload: `result u8 · seconds u16`. Never sent.
+  static const callLogType = 0x87;
+  static const callAnswered = 0, callMissed = 1, callDeclined = 2, callFailed = 3;
+
+  final _callSignals = StreamController<(int, CallSignal)>.broadcast();
+
+  /// Call set-up from contacts (CallService listens).
+  Stream<(int contactId, CallSignal signal)> get callSignals => _callSignals.stream;
+
+  /// A call can go now: SimpleX or Bramble carries the set-up, and the audio has a path —
+  /// the internet, or the same Wi-Fi (a Bramble LAN link to that contact).
+  bool canCall(int contactId) =>
+      canSendVoice(contactId) &&
+      (Net.online.value || (transport<BrambleTransport>()?.linksTo('$contactId').contains('lan') ?? false));
+
+  /// One try over SimpleX/Bramble, no queue: a call set-up that comes late is useless.
+  Future<bool> sendCallSignal(int contactId, CallSignal signal) async =>
+      await router.sendOnce('$contactId', MessageType.call, signal.encode(),
+          layers: _voiceLayersFor(contactId), now: DateTime.now()) !=
+      null;
+
+  /// Puts a finished call into the conversation; a missed one counts as unread.
+  Future<void> logCall(int contactId, {required bool outgoing, required int result, int seconds = 0}) async {
+    final now = DateTime.now();
+    await _db.into(_db.messages).insert(MessagesCompanion.insert(
+          id: toHex(randomBytes(8)),
+          contactId: Value(contactId),
+          outgoing: outgoing,
+          type: callLogType,
+          payload: (ByteWriter()
+                ..u8(result)
+                ..u16(seconds.clamp(0, 0xffff)))
+              .toBytes(),
+          at: now,
+          status: outgoing ? 'delivered' : (result == callMissed ? 'received' : 'seen'),
+          statusAt: Value(now),
+        ));
+    if (!outgoing && result == callMissed && !inForeground) onUnseen?.call(++_unseen, 'c:$contactId');
+  }
+
+  // --- voice messages ---
+
+  /// Voice goes over SimpleX and Bramble only: too big for LoRa, too dear for SMS. Bramble
+  /// only by Tor or the local network, never Bluetooth alone (too slow).
+  static const voiceLayers = {PaceLayer.primary, PaceLayer.alternate};
+
+  bool _voiceReach(Transport t, int contactId) => t is BrambleTransport
+      ? t.canReachWithoutBluetooth('$contactId')
+      : t.canReach('$contactId');
+
+  /// The layers a voice message (or call set-up) to [contactId] may use, in PACE order:
+  /// without Bramble while it has nothing but a Bluetooth link to them.
+  Set<PaceLayer> _voiceLayersFor(int contactId) {
+    final b = transport<BrambleTransport>();
+    final btOnly = b != null && b.canReach('$contactId') && !b.canReachWithoutBluetooth('$contactId');
+    return btOnly ? const {PaceLayer.primary} : voiceLayers;
+  }
+
+  /// A channel fit for voice reaches [contactId] right now (UI: the microphone button).
+  bool canSendVoice(int contactId) =>
+      _transports.any((t) => voiceLayers.contains(t.layer) && t.isAvailable && _voiceReach(t, contactId));
+
+  /// The team's voice reaches someone now: a member over SimpleX, or Bramble by Tor/LAN.
+  Future<bool> canSendTeamVoice(String teamId) async => (await _teamMemberIds(teamId)).any(canSendVoice);
+
+  /// A recorded clip to one contact, in [VoicePart]s with ACK over [voiceLayers] (it waits,
+  /// never goes by LoRa or SMS). One message row shows the whole clip; it has the last
+  /// part's id and is "delivered" once every part is.
+  Future<String> sendVoice(int contactId, int codec, int durationMs, Uint8List audio) {
+    final parts = VoicePart.split(randomBytes(4), codec, durationMs, audio);
+    return _sendInParts(contactId, MessageType.voice, [for (final p in parts) p.encode()], VoicePart.join(parts).encode());
+  }
+
+  /// A recorded clip to a team: each part to the members over SimpleX, or Bramble by
+  /// Tor/LAN — not broadcast on the squad net (Bluetooth) or LoRa.
+  Future<void> sendTeamVoice(String teamId, int codec, int durationMs, Uint8List audio) {
+    final parts = VoicePart.split(randomBytes(4), codec, durationMs, audio);
+    return _sendTeamInParts(teamId, MessageType.voice, [for (final p in parts) p.encode()], VoicePart.join(parts).encode());
+  }
+
+  /// A photo or file to one contact, like a voice clip: [FilePart]s over SimpleX/Bramble.
+  Future<String> sendAttachment(int contactId, Attachment a) {
+    final blob = a.encode();
+    return _sendInParts(
+        contactId, MessageType.file, [for (final p in FilePart.split(randomBytes(4), blob)) p.encode()], blob);
+  }
+
+  Future<void> sendTeamAttachment(String teamId, Attachment a) {
+    final blob = a.encode();
+    return _sendTeamInParts(
+        teamId, MessageType.file, [for (final p in FilePart.split(randomBytes(4), blob)) p.encode()], blob);
+  }
+
+  Future<String> _sendInParts(int contactId, int type, List<Uint8List> parts, Uint8List whole) async {
+    final now = DateTime.now();
+    final layers = _voiceLayersFor(contactId);
+    final earlier = <String>[];
+    var id = '';
+    for (final (i, p) in parts.indexed) {
+      id = await router.send('$contactId', type, p, layers: layers, now: now);
+      if (i < parts.length - 1) earlier.add(id);
+    }
+    _holdUntilAllParts(id, earlier);
+    final s = _latest[id];
+    await _db.into(_db.messages).insert(MessagesCompanion.insert(
+          id: id,
+          contactId: Value(contactId),
+          outgoing: true,
+          type: type,
+          payload: whole,
+          at: now,
+          status: s?.$1 ?? 'sending',
+          via: Value(s?.$2),
+        ));
+    await _apply(id);
+    return id;
+  }
+
+  Future<void> _sendTeamInParts(String teamId, int type, List<Uint8List> parts, Uint8List whole) async {
+    final now = DateTime.now();
+    // Members Bramble reaches only by Bluetooth get it over SimpleX alone
+    final groups = <Set<PaceLayer>, List<String>>{};
+    for (final c in await _teamMemberIds(teamId)) {
+      groups.putIfAbsent(_voiceLayersFor(c), () => []).add('$c');
+    }
+    final via = <String>{};
+    var id = '';
+    for (final p in parts) {
+      for (final g in groups.entries) {
+        final r = await router.sendTeamTo(teamId, type, p, now: now, members: g.value, fanOut: g.key, broadcast: false);
+        id = r.id;
+        via.addAll(r.via);
+      }
+    }
+    if (id.isEmpty) id = toHex(randomBytes(8)); // nobody in the team yet
+    await _db.into(_db.messages).insert(MessagesCompanion.insert(
+          id: id,
+          teamId: Value(teamId),
+          outgoing: true,
+          type: type,
+          payload: whole,
+          at: now,
+          status: via.isEmpty ? 'failed' : 'sent',
+          statusAt: Value(now),
+          via: Value(via.isEmpty ? null : (via.toList()..sort()).join('+')),
+        ));
+  }
+
+  // A clip's earlier parts have no row of their own: they hold back the row's "delivered"
+  // and can fail it.
+  final Map<String, String> _partOf = {}; // earlier part id → the row's id
+  final Map<String, Set<String>> _partsLeft = {}; // row id → earlier parts not delivered yet
+  final Set<String> _waitingForParts = {}; // rows whose last part is delivered already
+
+  void _holdUntilAllParts(String row, List<String> earlier) {
+    if (earlier.isEmpty) return;
+    _partsLeft[row] = {...earlier};
+    for (final p in earlier) {
+      _partOf[p] = row;
+      _latest.remove(p);
+    }
+  }
+
+  /// An incoming voice or file part: a one-part message is complete at once; parts of a
+  /// longer one wait in [VoiceParts] until the last arrives. Null when the message is not
+  /// complete yet; else the payload for the message row.
+  Future<Uint8List?> _part(int type, String from, bool team, String? sender, List<int> payload) async {
+    // One part at a time: two last parts arriving together would both see the set complete
+    // and show the message twice (seen on a slower phone)
+    final before = _parts;
+    final done = Completer<void>();
+    _parts = done.future;
+    await before;
+    try {
+      return await _partNow(type, from, team, sender, payload);
+    } finally {
+      done.complete();
+    }
+  }
+
+  Future<void> _parts = Future.value();
+
+  Future<Uint8List?> _partNow(int type, String from, bool team, String? sender, List<int> payload) async {
+    final String id;
+    final int index, count;
+    try {
+      if (type == MessageType.voice) {
+        final p = VoicePart.decode(payload);
+        if (p.count == 1) return Uint8List.fromList(payload);
+        (id, index, count) = ('v:${p.clipHex}', p.index, p.count);
+      } else {
+        final p = FilePart.decode(payload);
+        (id, index, count) = ('f:${p.fileHex}', p.index, p.count);
+      }
+    } on FormatException {
+      return null;
+    }
+    final key = team ? 't:$from:${sender ?? ''}:$id' : 'c:$from:$id';
+    await _db.into(_db.voiceParts).insertOnConflictUpdate(
+        VoicePartsCompanion.insert(clip: key, idx: index, payload: Uint8List.fromList(payload), at: DateTime.now()));
+    final rows = await (_db.select(_db.voiceParts)..where((t) => t.clip.equals(key))).get();
+    if (rows.length < count) return null;
+    final Uint8List whole;
+    try {
+      whole = type == MessageType.voice
+          ? VoicePart.join([for (final r in rows) VoicePart.decode(r.payload)]).encode()
+          : FilePart.join([for (final r in rows) FilePart.decode(r.payload)]);
+      if (type == MessageType.file) Attachment.decode(whole); // only a real attachment shows
+    } on Object {
+      return null; // mixed or broken parts: wait for the rest (old ones are dropped at start)
+    }
+    await (_db.delete(_db.voiceParts)..where((t) => t.clip.equals(key))).go();
+    return whole;
+  }
+
   Future<void> approveSms(String messageId) =>
       router.approveSms(messageId, now: DateTime.now());
 
@@ -833,8 +1070,24 @@ class MessagingService {
           if (!team) await _onControl(from, message.payload);
           return;
         }
-        if (!inForeground) onUnseen?.call(++_unseen, team ? 't:$from' : 'c:$from');
+        if (message.type == MessageType.call) {
+          final id = int.tryParse(from);
+          if (team || id == null) return;
+          try {
+            _callSignals.add((id, CallSignal.decode(message.payload)));
+          } on FormatException {
+            // not a call signal we understand
+          }
+          return;
+        }
         final fp = message.senderFingerprint == null ? null : toHex(message.senderFingerprint!);
+        var payload = Uint8List.fromList(message.payload);
+        if (message.type == MessageType.voice || message.type == MessageType.file) {
+          final whole = await _part(message.type, from, team, fp, payload);
+          if (whole == null) return; // more parts to come
+          payload = whole;
+        }
+        if (!inForeground) onUnseen?.call(++_unseen, team ? 't:$from' : 'c:$from');
         if (team && fp != null) {
           final writer = _contactByFingerprint[fp];
           if (writer != null) await addTeamMember(from, writer);
@@ -848,7 +1101,7 @@ class MessagingService {
                   : toHex(message.senderFingerprint!)),
               outgoing: false,
               type: message.type,
-              payload: Uint8List.fromList(message.payload),
+              payload: payload,
               // Local receipt time: ordering by the sender's clock breaks with clock skew
               // (seen in the field: phone without network time ~11 min off)
               at: DateTime.now(),
@@ -859,6 +1112,24 @@ class MessagingService {
   }
 
   Future<void> _status(String id, String status, String? via, {bool terminal = false}) async {
+    final row = _partOf[id];
+    if (row != null) {
+      // An earlier part of a voice clip
+      if (status == 'delivered' || status == 'failed') _partOf.remove(id);
+      if (status == 'failed') return _status(row, 'failed', null, terminal: true);
+      if (status == 'delivered') {
+        final left = _partsLeft[row]?..remove(id);
+        if (left != null && left.isEmpty) {
+          _partsLeft.remove(row);
+          if (_waitingForParts.remove(row)) await _status(row, 'delivered', via, terminal: true);
+        }
+      }
+      return;
+    }
+    if (status == 'delivered' && (_partsLeft[id]?.isNotEmpty ?? false)) {
+      _waitingForParts.add(id); // the last part is there, earlier ones are not yet
+      return;
+    }
     final prev = _latest[id];
     _latest[id] = (status, via ?? prev?.$2); // synchronously, before any await
     final updated = await _apply(id);
@@ -877,6 +1148,7 @@ class MessagingService {
 
   Future<void> dispose() async {
     _ticker?.cancel();
+    await _callSignals.close();
     await _sub?.cancel();
     for (final t in _appTransports) {
       await t.close();

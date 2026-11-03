@@ -1721,14 +1721,8 @@ abstract class AppLocalizations {
   /// No description provided for @statusSub.
   ///
   /// In cs, this message translates to:
-  /// **'v pořádku, pomoc, zraněn…'**
+  /// **'v pořádku, pomoc, zraněn… a SRAZ'**
   String get statusSub;
-
-  /// No description provided for @rallySub.
-  ///
-  /// In cs, this message translates to:
-  /// **'místo a čas setkání'**
-  String get rallySub;
 
   /// No description provided for @sitrepSub.
   ///
@@ -2611,6 +2605,330 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo.'**
   String get groupNoChange;
+
+  /// No description provided for @voiceMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hlasová zpráva {length}'**
+  String voiceMessage(String length);
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hlasová zpráva'**
+  String get voiceRecord;
+
+  /// No description provided for @voiceNoChannel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hlasová zpráva potřebuje SimpleX nebo Bramble (internet, Wi-Fi nebo Bluetooth). LoRa a SMS ji neunesou.'**
+  String get voiceNoChannel;
+
+  /// No description provided for @voiceRecording.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahrávám'**
+  String get voiceRecording;
+
+  /// No description provided for @voiceAtLimit.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nejvýš 30 s: nahrávání skončilo'**
+  String get voiceAtLimit;
+
+  /// No description provided for @voiceDiscard.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zahodit'**
+  String get voiceDiscard;
+
+  /// No description provided for @voiceMicDenied.
+  ///
+  /// In cs, this message translates to:
+  /// **'Bez přístupu k mikrofonu nejde nahrávat.'**
+  String get voiceMicDenied;
+
+  /// No description provided for @voiceFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahrávání se nepovedlo.'**
+  String get voiceFailed;
+
+  /// No description provided for @voicePlayFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zprávu nejde přehrát.'**
+  String get voicePlayFailed;
+
+  /// No description provided for @callAction.
+  ///
+  /// In cs, this message translates to:
+  /// **'Volat'**
+  String get callAction;
+
+  /// No description provided for @callNoChannel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hovor potřebuje SimpleX nebo Bramble a k tomu internet nebo společnou Wi-Fi.'**
+  String get callNoChannel;
+
+  /// No description provided for @callCalling.
+  ///
+  /// In cs, this message translates to:
+  /// **'Volám…'**
+  String get callCalling;
+
+  /// No description provided for @callIncoming.
+  ///
+  /// In cs, this message translates to:
+  /// **'Příchozí hovor'**
+  String get callIncoming;
+
+  /// No description provided for @callConnecting.
+  ///
+  /// In cs, this message translates to:
+  /// **'Spojuji…'**
+  String get callConnecting;
+
+  /// No description provided for @callEnded.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hovor skončil'**
+  String get callEnded;
+
+  /// No description provided for @callDeclinedEnd.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hovor odmítnut'**
+  String get callDeclinedEnd;
+
+  /// No description provided for @callBusy.
+  ///
+  /// In cs, this message translates to:
+  /// **'Obsazeno'**
+  String get callBusy;
+
+  /// No description provided for @callNoAnswer.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nikdo to nezvedá'**
+  String get callNoAnswer;
+
+  /// No description provided for @callFailedEnd.
+  ///
+  /// In cs, this message translates to:
+  /// **'Spojení se nepodařilo'**
+  String get callFailedEnd;
+
+  /// No description provided for @callAccept.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přijmout'**
+  String get callAccept;
+
+  /// No description provided for @callDecline.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odmítnout'**
+  String get callDecline;
+
+  /// No description provided for @callHangUp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zavěsit'**
+  String get callHangUp;
+
+  /// No description provided for @callMute.
+  ///
+  /// In cs, this message translates to:
+  /// **'Ztlumit'**
+  String get callMute;
+
+  /// No description provided for @callSpeaker.
+  ///
+  /// In cs, this message translates to:
+  /// **'Reproduktor'**
+  String get callSpeaker;
+
+  /// No description provided for @callDirect.
+  ///
+  /// In cs, this message translates to:
+  /// **'Šifrováno · přímé spojení'**
+  String get callDirect;
+
+  /// No description provided for @callRelayed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Šifrováno · přes server SimpleX'**
+  String get callRelayed;
+
+  /// No description provided for @callEncrypted.
+  ///
+  /// In cs, this message translates to:
+  /// **'Šifrováno (DTLS-SRTP)'**
+  String get callEncrypted;
+
+  /// No description provided for @logOut.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odchozí hovor {length}'**
+  String logOut(String length);
+
+  /// No description provided for @logIn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Příchozí hovor {length}'**
+  String logIn(String length);
+
+  /// No description provided for @logMissedIn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zmeškaný hovor'**
+  String get logMissedIn;
+
+  /// No description provided for @logMissedOut.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nepřijatý hovor'**
+  String get logMissedOut;
+
+  /// No description provided for @logDeclined.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odmítnutý hovor'**
+  String get logDeclined;
+
+  /// No description provided for @logFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hovor se nepodařil'**
+  String get logFailed;
+
+  /// No description provided for @attachPhoto.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vyfotit'**
+  String get attachPhoto;
+
+  /// No description provided for @attachPhotoSub.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zmenšená, bez polohy a údajů o fotoaparátu (EXIF)'**
+  String get attachPhotoSub;
+
+  /// No description provided for @attachFile.
+  ///
+  /// In cs, this message translates to:
+  /// **'Soubor'**
+  String get attachFile;
+
+  /// No description provided for @attachFileSub.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nejvýš 512 kB'**
+  String get attachFileSub;
+
+  /// No description provided for @attachNoChannel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Fotky a soubory potřebují SimpleX nebo Bramble (internet nebo Wi-Fi), ne Bluetooth, LoRa ani SMS.'**
+  String get attachNoChannel;
+
+  /// No description provided for @attachTooBig.
+  ///
+  /// In cs, this message translates to:
+  /// **'Soubor má {size}, poslat jde nejvýš 512 kB.'**
+  String attachTooBig(String size);
+
+  /// No description provided for @attachSending.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odesílám ({size})…'**
+  String attachSending(String size);
+
+  /// No description provided for @attachCamDenied.
+  ///
+  /// In cs, this message translates to:
+  /// **'Bez přístupu k fotoaparátu nejde fotit.'**
+  String get attachCamDenied;
+
+  /// No description provided for @attachFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přílohu se nepodařilo načíst.'**
+  String get attachFailed;
+
+  /// No description provided for @photoLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Fotografie'**
+  String get photoLabel;
+
+  /// No description provided for @fileLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Soubor {name} ({size})'**
+  String fileLabel(String name, String size);
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In cs, this message translates to:
+  /// **'Uloženo.'**
+  String get fileSaved;
+
+  /// No description provided for @fileSaveFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Uložení se nepovedlo.'**
+  String get fileSaveFailed;
+
+  /// No description provided for @attachments.
+  ///
+  /// In cs, this message translates to:
+  /// **'PŘÍLOHY'**
+  String get attachments;
+
+  /// No description provided for @contactInfo.
+  ///
+  /// In cs, this message translates to:
+  /// **'Informace o kontaktu'**
+  String get contactInfo;
+
+  /// No description provided for @clearChat.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vymazat chat'**
+  String get clearChat;
+
+  /// No description provided for @clearChatAsk.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vymazat obsah chatu?'**
+  String get clearChatAsk;
+
+  /// No description provided for @clearChatText.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smaže zprávy, hlášení, hlasové zprávy a přílohy tohoto chatu jen na tomto telefonu. Kontakt nebo tým zůstane.'**
+  String get clearChatText;
+
+  /// No description provided for @chatCleared.
+  ///
+  /// In cs, this message translates to:
+  /// **'Chat vymazán.'**
+  String get chatCleared;
+
+  /// No description provided for @statusWithRally.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přidat SRAZ (místo a čas)'**
+  String get statusWithRally;
+
+  /// No description provided for @rallyPlace.
+  ///
+  /// In cs, this message translates to:
+  /// **'Místo srazu'**
+  String get rallyPlace;
 }
 
 class _AppLocalizationsDelegate

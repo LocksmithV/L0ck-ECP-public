@@ -108,6 +108,12 @@ class BrambleTransport extends AppTransport {
       _brambleId.containsKey(_linkOf[contactId]) &&
       (linksTo(contactId).isNotEmpty || (_active.contains('tor') && Net.online.value));
 
+  /// As [canReach], but not over Bluetooth alone: voice and call set-up only by Tor or the
+  /// local network (a Bluetooth link is too slow for them).
+  bool canReachWithoutBluetooth(String contactId) =>
+      canReach(contactId) &&
+      (linksTo(contactId).any((l) => l != 'bluetooth') || (_active.contains('tor') && Net.online.value));
+
   /// Links to [contactId] right now (tor / lan / bluetooth).
   Set<String> linksTo(String contactId) => _links[_brambleId[_linkOf[contactId]]] ?? const {};
 

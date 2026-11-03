@@ -4,8 +4,11 @@ import 'package:flutter/services.dart';
 
 import '../data/database.dart';
 import '../l10n/lang.dart';
+import '../messaging/messaging_service.dart';
 import 'reports.dart';
 import 'theme.dart';
+import 'attachments.dart';
+import 'voice.dart';
 
 /// "14:05", or "2. 11. 14:05" when not today.
 String shortTime(DateTime t) {
@@ -25,6 +28,22 @@ String channelName(String? via) => switch (via) {
       final v => v.split('+').map(channelName).join(' + '),
     };
 
+/// A call in the conversation (MessagingService.logCall).
+String callLogText(Message m) {
+  final l = Lang.tr;
+  if (m.payload.length < 3) return l.logFailed;
+  final r = ByteReader(m.payload);
+  final result = r.u8(), seconds = r.u16();
+  return switch (result) {
+    MessagingService.callAnswered => m.outgoing
+        ? l.logOut(voiceLength(seconds * 1000))
+        : l.logIn(voiceLength(seconds * 1000)),
+    MessagingService.callMissed => m.outgoing ? l.logMissedOut : l.logMissedIn,
+    MessagingService.callDeclined => l.logDeclined,
+    _ => l.logFailed,
+  };
+}
+
 /// One message: text you can select and copy, its time, and for own messages the delivery
 /// state (✓ sent, ✓✓ delivered, green ✓✓ read) with the channel used.
 class MessageBubble extends StatelessWidget {
@@ -42,7 +61,13 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isText = m.type == MessageType.text;
-    final text = isText ? decodeText(m.payload) : reportText(m.type, m.payload);
+    final isVoice = m.type == MessageType.voice;
+    final isCall = m.type == MessagingService.callLogType;
+    final text = isText
+        ? decodeText(m.payload)
+        : isCall
+            ? callLogText(m)
+            : reportText(m.type, m.payload);
     final (icon, color, label) = _state(context.l);
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
@@ -66,7 +91,23 @@ class MessageBubble extends StatelessWidget {
             },
             child: isText
                 ? SelectableText(text, style: const TextStyle(color: L0ckColors.text, fontSize: 15))
-                : ReportView(type: m.type, payload: m.payload),
+                : isVoice
+                    ? VoiceClipView(id: m.id, payload: m.payload)
+                    : m.type == MessageType.file
+                        ? AttachmentView(payload: m.payload)
+                    : isCall
+                        ? Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(m.payload.isNotEmpty && m.payload[0] == MessagingService.callAnswered
+                                    ? (m.outgoing ? Icons.call_made : Icons.call_received)
+                                    : Icons.call_missed,
+                                size: 18,
+                                color: m.payload.isNotEmpty && m.payload[0] == MessagingService.callAnswered
+                                    ? L0ckColors.greenLight
+                                    : L0ckColors.orange),
+                            const SizedBox(width: 8),
+                            Flexible(child: Text(text, style: const TextStyle(color: L0ckColors.text, fontSize: 15))),
+                          ])
+                        : ReportView(type: m.type, payload: m.payload),
           ),
           const SizedBox(height: 4),
           Row(mainAxisSize: MainAxisSize.min, children: [

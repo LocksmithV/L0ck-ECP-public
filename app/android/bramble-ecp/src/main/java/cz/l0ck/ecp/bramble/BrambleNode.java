@@ -214,13 +214,24 @@ public class BrambleNode implements EventListener {
 	}
 
 	/**
-	 * A plugin that started before the user granted "Nearby devices" (fresh install) stays
-	 * INACTIVE for good; switching it off and on makes it look at the adapter again.
+	 * Switches a plugin off and on so it looks at its adapter again. A Bluetooth plugin that
+	 * started before "Nearby devices" was granted (fresh install, fresh profile) saved itself
+	 * as off "by the user" (DISABLED/1) and stays so; it only needs switching on. Off and on
+	 * are applied one after the other: the plugin manager writes each on an executor with
+	 * several threads, so sent together the "off" could land last and win.
 	 */
 	private boolean restart(Plugin p) {
-		g.pluginManager().setPluginEnabled(p.getId(), false);
+		if (p.getState() != Plugin.State.DISABLED) {
+			g.pluginManager().setPluginEnabled(p.getId(), false);
+			if (!waitFor(p, Plugin.State.DISABLED, 10)) return false;
+		}
 		g.pluginManager().setPluginEnabled(p.getId(), true);
-		for (int i = 0; i < 20 && p.getState() != Plugin.State.ACTIVE; i++) {
+		return waitFor(p, Plugin.State.ACTIVE, 20);
+	}
+
+	/** Polls [p] every 0.5 s, at most [tries] times, until it is in [state]. */
+	private static boolean waitFor(Plugin p, Plugin.State state, int tries) {
+		for (int i = 0; i < tries && p.getState() != state; i++) {
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
@@ -228,7 +239,7 @@ public class BrambleNode implements EventListener {
 				return false;
 			}
 		}
-		return p.getState() == Plugin.State.ACTIVE;
+		return p.getState() == state;
 	}
 
 	/**

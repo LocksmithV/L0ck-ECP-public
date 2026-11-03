@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'l10n/lang.dart';
 import 'messaging/bramble_transport.dart';
+import 'messaging/call_service.dart';
 import 'messaging/meshcore_app_transport.dart';
 import 'messaging/messaging_service.dart';
 import 'messaging/simplex_app_transport.dart';
@@ -23,6 +24,7 @@ import 'platform/notify.dart';
 import 'security/lock_config.dart';
 import 'security/native_kdf.dart';
 import 'security/security_service.dart';
+import 'ui/call_screen.dart';
 import 'ui/home_screen.dart';
 import 'ui/conversation_screen.dart';
 import 'ui/lock_screen.dart';
@@ -176,7 +178,39 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void _inView() {
     _messaging?.seen();
     Notifications.clear().ignore();
+    if (_calls?.busy ?? false) {
+      _showCall(); // a call rings or runs: that comes first
+      Notifications.takeOpen().ignore();
+      return;
+    }
     _openFromNotification();
+  }
+
+  // --- calls ---
+
+  CallService? _calls;
+  bool _callShown = false;
+
+  /// The call screen, once, above whatever is open.
+  void _showCall() {
+    final calls = _calls;
+    if (calls == null || _callShown || _stage != _Stage.unlocked || !mounted) return;
+    _callShown = true;
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => CallScreen(calls: calls)))
+        .whenComplete(() => _callShown = false);
+  }
+
+  CallService _startCalls(MessagingService m) {
+    final calls = CallService(m);
+    calls.onIncoming = (c) {
+      // Rings in any case; the screen shows only behind the PIN
+      Notifications.call(Lang.tr.callIncoming, open: 'k:${c.contact.id}').ignore();
+      if (m.inForeground) _showCall();
+    };
+    calls.onEnded = () => Notifications.callEnd().ignore();
+    CallService.instance = calls;
+    return calls;
   }
 
   /// After the PIN: straight to the conversation whose notification was tapped.
@@ -219,8 +253,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _close() async {
     final s = _session;
     final m = _messaging;
+    final calls = _calls;
     _session = null;
     _messaging = null;
+    _calls = null;
+    CallService.instance = null;
+    await calls?.dispose(); // a running call ends with the profile
     await m?.dispose(); // flushes replay memory before the database closes
     await s?.close();
   }
@@ -231,6 +269,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     await _close();
     final m = await MessagingService.start(s);
     if (!mounted) return;
+    _calls = _startCalls(m);
     m.onUnseen = (n, open) => Notifications.message(n, open: open).ignore();
     setState(() {
       _session = s;
