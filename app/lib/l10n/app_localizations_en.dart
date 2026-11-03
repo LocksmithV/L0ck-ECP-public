@@ -1283,7 +1283,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get secApp => 'App';
 
   @override
-  String get secAppSub => 'Nickname, language';
+  String get secAppSub => 'Nickname, language, factory reset';
 
   @override
   String get pinCodes => 'PIN and duress code';
@@ -1366,4 +1366,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noRecipients => 'No contacts or teams yet.';
+
+  @override
+  String get groupBundle => 'Group bundle';
+
+  @override
+  String get groupLoad => 'Load group bundle';
+
+  @override
+  String get groupHelp =>
+      'The base laptop shows the bundle as a series of QR codes. Scan them all, in any order. The phone then gets the whole group\'s contacts, its teams, the LoRa channel and the PACE order.';
+
+  @override
+  String get groupScan => 'SCAN QR';
+
+  @override
+  String groupProgress(int have, int total) {
+    return '$have of $total QR codes read';
+  }
+
+  @override
+  String groupPrompt(int i, int total) {
+    return 'Group bundle: QR $i of $total';
+  }
+
+  @override
+  String get groupPromptFirst => 'Group bundle: any QR code';
+
+  @override
+  String get groupNotPart => 'This is not a group bundle QR code.';
+
+  @override
+  String get groupOther => 'This QR code belongs to another bundle.';
+
+  @override
+  String get groupBroken => 'The bundle is damaged. Scan it again.';
+
+  @override
+  String get groupNotMember =>
+      'This phone is not in the bundle. Scan its contact QR on the laptop first.';
+
+  @override
+  String groupContacts(int n) {
+    return 'Contacts ($n)';
+  }
+
+  @override
+  String get groupTeamsFor => 'This phone\'s teams';
+
+  @override
+  String get groupNoTeams => 'none';
+
+  @override
+  String groupLora(String team) {
+    return 'LoRa radio: channel of team $team';
+  }
+
+  @override
+  String groupPace(String order) {
+    return 'PACE order: $order';
+  }
+
+  @override
+  String get groupApply => 'SET UP THIS PHONE';
+
+  @override
+  String groupDone(int contacts, int teams) {
+    return 'Done: $contacts contacts, $teams teams.';
+  }
+
+  @override
+  String get groupAgain => 'Start over';
+
+  @override
+  String get factoryReset => 'Factory reset';
+
+  @override
+  String get factoryResetHelp =>
+      'Erases the profile and the decoy, contacts, teams, messages, keys and settings on this phone. The app then starts again as after installing. Nothing is sent to contacts. It cannot be undone.';
+
+  @override
+  String get factoryResetButton => 'FACTORY RESET';
+
+  @override
+  String get factoryResetAsk => 'Really erase everything?';
+
+  @override
+  String get factoryResetConfirm => 'ERASE ALL';
 }

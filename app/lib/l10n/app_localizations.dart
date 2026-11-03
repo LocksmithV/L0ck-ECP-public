@@ -2297,7 +2297,7 @@ abstract class AppLocalizations {
   /// No description provided for @secAppSub.
   ///
   /// In cs, this message translates to:
-  /// **'Přezdívka, jazyk'**
+  /// **'Přezdívka, jazyk, tovární nastavení'**
   String get secAppSub;
 
   /// No description provided for @pinCodes.
@@ -2443,6 +2443,150 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Zatím nemáš žádné kontakty ani týmy.'**
   String get noRecipients;
+
+  /// No description provided for @groupBundle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Balíček skupiny'**
+  String get groupBundle;
+
+  /// No description provided for @groupLoad.
+  ///
+  /// In cs, this message translates to:
+  /// **'Načíst balíček skupiny'**
+  String get groupLoad;
+
+  /// No description provided for @groupHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Balíček ukazuje notebook na základně jako sérii QR kódů. Načti je všechny, na pořadí nezáleží. Telefon pak dostane kontakty celé skupiny, svoje týmy, kanál LoRa a pořadí PACE.'**
+  String get groupHelp;
+
+  /// No description provided for @groupScan.
+  ///
+  /// In cs, this message translates to:
+  /// **'SKENOVAT QR'**
+  String get groupScan;
+
+  /// No description provided for @groupProgress.
+  ///
+  /// In cs, this message translates to:
+  /// **'Načteno {have} z {total} QR'**
+  String groupProgress(int have, int total);
+
+  /// No description provided for @groupPrompt.
+  ///
+  /// In cs, this message translates to:
+  /// **'Balíček skupiny: QR {i} z {total}'**
+  String groupPrompt(int i, int total);
+
+  /// No description provided for @groupPromptFirst.
+  ///
+  /// In cs, this message translates to:
+  /// **'Balíček skupiny: kterýkoli QR'**
+  String get groupPromptFirst;
+
+  /// No description provided for @groupNotPart.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tohle není QR balíčku skupiny.'**
+  String get groupNotPart;
+
+  /// No description provided for @groupOther.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tento QR patří k jinému balíčku.'**
+  String get groupOther;
+
+  /// No description provided for @groupBroken.
+  ///
+  /// In cs, this message translates to:
+  /// **'Balíček je poškozený. Načti ho znovu.'**
+  String get groupBroken;
+
+  /// No description provided for @groupNotMember.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tento telefon v balíčku není. Na notebooku nejdřív načti jeho kontaktní QR.'**
+  String get groupNotMember;
+
+  /// No description provided for @groupContacts.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kontakty ({n})'**
+  String groupContacts(int n);
+
+  /// No description provided for @groupTeamsFor.
+  ///
+  /// In cs, this message translates to:
+  /// **'Týmy tohoto telefonu'**
+  String get groupTeamsFor;
+
+  /// No description provided for @groupNoTeams.
+  ///
+  /// In cs, this message translates to:
+  /// **'žádný'**
+  String get groupNoTeams;
+
+  /// No description provided for @groupLora.
+  ///
+  /// In cs, this message translates to:
+  /// **'Rádio LoRa: kanál týmu {team}'**
+  String groupLora(String team);
+
+  /// No description provided for @groupPace.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pořadí PACE: {order}'**
+  String groupPace(String order);
+
+  /// No description provided for @groupApply.
+  ///
+  /// In cs, this message translates to:
+  /// **'NASTAVIT TELEFON'**
+  String get groupApply;
+
+  /// No description provided for @groupDone.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hotovo: {contacts} kontaktů, {teams} týmů.'**
+  String groupDone(int contacts, int teams);
+
+  /// No description provided for @groupAgain.
+  ///
+  /// In cs, this message translates to:
+  /// **'Začít znovu'**
+  String get groupAgain;
+
+  /// No description provided for @factoryReset.
+  ///
+  /// In cs, this message translates to:
+  /// **'Obnovit tovární nastavení'**
+  String get factoryReset;
+
+  /// No description provided for @factoryResetHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smaže profil i návnadu, kontakty, týmy, zprávy, klíče a nastavení na tomto telefonu. Aplikace pak začne znovu jako po instalaci. Kontaktům se nic neposílá. Nejde to vrátit.'**
+  String get factoryResetHelp;
+
+  /// No description provided for @factoryResetButton.
+  ///
+  /// In cs, this message translates to:
+  /// **'OBNOVIT TOVÁRNÍ NASTAVENÍ'**
+  String get factoryResetButton;
+
+  /// No description provided for @factoryResetAsk.
+  ///
+  /// In cs, this message translates to:
+  /// **'Opravdu smazat vše?'**
+  String get factoryResetAsk;
+
+  /// No description provided for @factoryResetConfirm.
+  ///
+  /// In cs, this message translates to:
+  /// **'SMAZAT VŠE'**
+  String get factoryResetConfirm;
 }
 
 class _AppLocalizationsDelegate

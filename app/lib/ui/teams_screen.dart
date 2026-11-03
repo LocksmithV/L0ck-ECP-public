@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../data/database.dart';
 import '../l10n/lang.dart';
 import '../messaging/messaging_service.dart';
+import 'group_import.dart';
 import 'message_bubble.dart';
 import 'reports.dart';
 import 'theme.dart';
@@ -45,7 +46,14 @@ class TeamsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(context.l.teams)),
+        appBar: AppBar(title: Text(context.l.teams), actions: [
+          IconButton(
+            tooltip: context.l.groupLoad,
+            icon: const Icon(Icons.qr_code_scanner, color: L0ckColors.greenLight),
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => GroupImportScreen(messaging: messaging))),
+          ),
+        ]),
         floatingActionButton: FloatingActionButton.extended(
           backgroundColor: L0ckColors.greenDark,
           foregroundColor: L0ckColors.text,

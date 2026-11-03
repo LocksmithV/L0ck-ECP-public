@@ -1,4 +1,10 @@
-# Nástroje pro testování na laptopu
+# Nástroje pro laptop
+
+- **`ecp_base/`** — offline webová stránka pro základnu: hromadné nastavení skupiny
+  (kontakty, týmy, kanál LoRa, pořadí PACE) jedním balíčkem QR kódů. Viz
+  [ecp_base/README.md](ecp_base/README.md).
+
+## Testování na laptopu
 
 Druhý telefon zatím není, tak jeho roli hraje laptop.
 

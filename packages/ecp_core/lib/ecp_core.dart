@@ -6,6 +6,7 @@ export 'src/bytes.dart' show ByteReader, ByteWriter, constantTimeEquals, fromHex
 export 'src/contact_card.dart';
 export 'src/envelope.dart';
 export 'src/geo.dart';
+export 'src/group_bundle.dart';
 export 'src/key_slots.dart';
 export 'src/keys.dart';
 export 'src/messages.dart';

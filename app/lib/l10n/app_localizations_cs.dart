@@ -1280,7 +1280,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get secApp => 'Aplikace';
 
   @override
-  String get secAppSub => 'Přezdívka, jazyk';
+  String get secAppSub => 'Přezdívka, jazyk, tovární nastavení';
 
   @override
   String get pinCodes => 'PIN a duress kód';
@@ -1363,4 +1363,91 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get noRecipients => 'Zatím nemáš žádné kontakty ani týmy.';
+
+  @override
+  String get groupBundle => 'Balíček skupiny';
+
+  @override
+  String get groupLoad => 'Načíst balíček skupiny';
+
+  @override
+  String get groupHelp =>
+      'Balíček ukazuje notebook na základně jako sérii QR kódů. Načti je všechny, na pořadí nezáleží. Telefon pak dostane kontakty celé skupiny, svoje týmy, kanál LoRa a pořadí PACE.';
+
+  @override
+  String get groupScan => 'SKENOVAT QR';
+
+  @override
+  String groupProgress(int have, int total) {
+    return 'Načteno $have z $total QR';
+  }
+
+  @override
+  String groupPrompt(int i, int total) {
+    return 'Balíček skupiny: QR $i z $total';
+  }
+
+  @override
+  String get groupPromptFirst => 'Balíček skupiny: kterýkoli QR';
+
+  @override
+  String get groupNotPart => 'Tohle není QR balíčku skupiny.';
+
+  @override
+  String get groupOther => 'Tento QR patří k jinému balíčku.';
+
+  @override
+  String get groupBroken => 'Balíček je poškozený. Načti ho znovu.';
+
+  @override
+  String get groupNotMember =>
+      'Tento telefon v balíčku není. Na notebooku nejdřív načti jeho kontaktní QR.';
+
+  @override
+  String groupContacts(int n) {
+    return 'Kontakty ($n)';
+  }
+
+  @override
+  String get groupTeamsFor => 'Týmy tohoto telefonu';
+
+  @override
+  String get groupNoTeams => 'žádný';
+
+  @override
+  String groupLora(String team) {
+    return 'Rádio LoRa: kanál týmu $team';
+  }
+
+  @override
+  String groupPace(String order) {
+    return 'Pořadí PACE: $order';
+  }
+
+  @override
+  String get groupApply => 'NASTAVIT TELEFON';
+
+  @override
+  String groupDone(int contacts, int teams) {
+    return 'Hotovo: $contacts kontaktů, $teams týmů.';
+  }
+
+  @override
+  String get groupAgain => 'Začít znovu';
+
+  @override
+  String get factoryReset => 'Obnovit tovární nastavení';
+
+  @override
+  String get factoryResetHelp =>
+      'Smaže profil i návnadu, kontakty, týmy, zprávy, klíče a nastavení na tomto telefonu. Aplikace pak začne znovu jako po instalaci. Kontaktům se nic neposílá. Nejde to vrátit.';
+
+  @override
+  String get factoryResetButton => 'OBNOVIT TOVÁRNÍ NASTAVENÍ';
+
+  @override
+  String get factoryResetAsk => 'Opravdu smazat vše?';
+
+  @override
+  String get factoryResetConfirm => 'SMAZAT VŠE';
 }

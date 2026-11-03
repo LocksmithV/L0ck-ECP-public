@@ -845,7 +845,7 @@
   "secConnectivity": "Konektivita",
   "secConnectivitySub": "Číslo pro SMS, pořadí PACE, obnova spojení, rádio LoRa",
   "secApp": "Aplikace",
-  "secAppSub": "Přezdívka, jazyk",
+  "secAppSub": "Přezdívka, jazyk, tovární nastavení",
   "pinCodes": "PIN a duress kód",
   "lockTitle": "Zamykání",
   "lockAfter": "Zamknout po odchodu z aplikace",
@@ -897,5 +897,80 @@
       }
     }
   },
-  "noRecipients": "Zatím nemáš žádné kontakty ani týmy."
+  "noRecipients": "Zatím nemáš žádné kontakty ani týmy.",
+  "groupBundle": "Balíček skupiny",
+  "groupLoad": "Načíst balíček skupiny",
+  "groupHelp": "Balíček ukazuje notebook na základně jako sérii QR kódů. Načti je všechny, na pořadí nezáleží. Telefon pak dostane kontakty celé skupiny, svoje týmy, kanál LoRa a pořadí PACE.",
+  "groupScan": "SKENOVAT QR",
+  "groupProgress": "Načteno {have} z {total} QR",
+  "@groupProgress": {
+    "placeholders": {
+      "have": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groupPrompt": "Balíček skupiny: QR {i} z {total}",
+  "@groupPrompt": {
+    "placeholders": {
+      "i": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groupPromptFirst": "Balíček skupiny: kterýkoli QR",
+  "groupNotPart": "Tohle není QR balíčku skupiny.",
+  "groupOther": "Tento QR patří k jinému balíčku.",
+  "groupBroken": "Balíček je poškozený. Načti ho znovu.",
+  "groupNotMember": "Tento telefon v balíčku není. Na notebooku nejdřív načti jeho kontaktní QR.",
+  "groupContacts": "Kontakty ({n})",
+  "@groupContacts": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "groupTeamsFor": "Týmy tohoto telefonu",
+  "groupNoTeams": "žádný",
+  "groupLora": "Rádio LoRa: kanál týmu {team}",
+  "@groupLora": {
+    "placeholders": {
+      "team": {
+        "type": "String"
+      }
+    }
+  },
+  "groupPace": "Pořadí PACE: {order}",
+  "@groupPace": {
+    "placeholders": {
+      "order": {
+        "type": "String"
+      }
+    }
+  },
+  "groupApply": "NASTAVIT TELEFON",
+  "groupDone": "Hotovo: {contacts} kontaktů, {teams} týmů.",
+  "@groupDone": {
+    "placeholders": {
+      "contacts": {
+        "type": "int"
+      },
+      "teams": {
+        "type": "int"
+      }
+    }
+  },
+  "groupAgain": "Začít znovu",
+  "factoryReset": "Obnovit tovární nastavení",
+  "factoryResetHelp": "Smaže profil i návnadu, kontakty, týmy, zprávy, klíče a nastavení na tomto telefonu. Aplikace pak začne znovu jako po instalaci. Kontaktům se nic neposílá. Nejde to vrátit.",
+  "factoryResetButton": "OBNOVIT TOVÁRNÍ NASTAVENÍ",
+  "factoryResetAsk": "Opravdu smazat vše?",
+  "factoryResetConfirm": "SMAZAT VŠE"
 }

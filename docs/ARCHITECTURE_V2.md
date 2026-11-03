@@ -407,6 +407,25 @@ přes PACE. Nastavení je ve třech rozbalovacích oddílech: Bezpečnost (PIN a
 otisk, PANIC), Konektivita (číslo pro SMS, pořadí PACE, obnova spojení, rádio LoRa),
 Aplikace (přezdívka, jazyk), a samostatně O aplikaci.
 
+**Hromadné nastavení skupiny (0.1.2, 2026-11-03):** offline stránka `tools/ecp_base`
+na notebooku načte kamerou kontaktní QR všech telefonů, založí týmy (náhodný klíč z
+`crypto.getRandomValues`), zvolí tým pro kanál LoRa a pořadí PACE. Výsledek je *balíček
+skupiny* (`GroupBundle` v `ecp_core`): `'G' · verze · karty členů · týmy (název, klíč, indexy
+členů) · tým LoRa · pořadí PACE`, rozdělený do QR `l0ck://g/<id>/<i>/<n>/<base64url>` po
+700 B. Telefon (Kontakty / Týmy → Načíst balíček skupiny) načte díly v libovolném pořadí,
+ukáže souhrn a `MessagingService.importGroup`: ostatní členové jako ověření kontakty, týmy,
+kde je telefon zaškrtnutý, i s členy, kanál LoRa (jen členové toho týmu), pořadí PACE.
+Nic se neposílá: všichni načtou stejný balíček. Telefon, který v balíčku není, se nenastaví.
+Balíček nese klíče všech týmů, proto jen osobně na základně; stránka nic neukládá a má CSP
+`connect-src 'none'`. Shodu formátu hlídá test: `tools/ecp_base/test/bundle_test.js` píše
+fixture, kterou dekóduje `group_bundle_test.dart`.
+
+**Tovární nastavení (0.1.2):** Nastavení → Aplikace → *Obnovit tovární nastavení*. Tlačítko
+jen otevře dialog, smaže až jeho červené potvrzení: stejně jako po 10 chybných PINech
+(`SecurityService.wipeAll`) zničí oba sloty, klíč v Keystore, všechny databáze a data Bramble
+a SimpleX; aplikace začne nastavením jako po instalaci. Kontaktům nic neposílá. Zůstane jen
+zvolený jazyk (soubor `lang`).
+
 **Jazyk a About (2026-11-02):** aplikace je česky a anglicky (Flutter `gen-l10n`,
 `app/lib/l10n/app_cs.arb` je šablona, `app_en.arb` překlad). Přepínač je v Nastavení; volba
 se ukládá do souboru `lang` vedle šifrovaných profilů, protože musí platit už na zamykací

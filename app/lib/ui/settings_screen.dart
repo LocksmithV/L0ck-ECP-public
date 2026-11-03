@@ -18,7 +18,7 @@ import 'reports.dart' show statusLabel;
 import 'theme.dart';
 import 'widgets.dart';
 
-String _layerName(AppLocalizations l, PaceLayer layer) => switch (layer) {
+String layerName(AppLocalizations l, PaceLayer layer) => switch (layer) {
       PaceLayer.primary => 'SimpleX',
       PaceLayer.alternate => l.layerAlternate,
       PaceLayer.contingency => l.layerContingency,
@@ -44,10 +44,13 @@ String _country(AppLocalizations l, String prefix) => switch (prefix) {
 /// and About. PIN and duress code can be changed but never shown: they are not stored
 /// anywhere, only the keys derived from them.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.messaging, required this.security});
+  const SettingsScreen({super.key, required this.messaging, required this.security, required this.onFactoryReset});
 
   final MessagingService messaging;
   final SecurityService security;
+
+  /// Erases everything on this phone; the app returns to the first-start setup.
+  final Future<void> Function() onFactoryReset;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -212,6 +215,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// The button only asks; the dialog's red button erases.
+  Future<void> _factoryReset() async {
+    final l = context.l;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: L0ckColors.panel,
+        title: Text(l.factoryResetAsk),
+        content: Text(l.factoryResetHelp, style: const TextStyle(color: L0ckColors.text)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
+          FilledButton(
+            key: const Key('factory-reset-confirm'),
+            style: FilledButton.styleFrom(backgroundColor: L0ckColors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.factoryResetConfirm),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await widget.onFactoryReset();
+  }
+
   void _push(Widget screen) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
 
   @override
@@ -298,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         dense: true,
                         contentPadding: EdgeInsets.zero,
                         leading: Text('${i + 1}', style: const TextStyle(color: L0ckColors.orange, fontSize: 16)),
-                        title: Text(_layerName(l, layer), style: const TextStyle(color: L0ckColors.text)),
+                        title: Text(layerName(l, layer), style: const TextStyle(color: L0ckColors.text)),
                         trailing: ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_handle)),
                       ),
                   ],
@@ -344,6 +370,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   widget.messaging.channelsChanged.value++; // channel lines in the new language
                 },
               ),
+            ),
+            Panel(
+              title: l.factoryReset,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(l.factoryResetHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  key: const Key('factory-reset'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: L0ckColors.red,
+                    side: const BorderSide(color: L0ckColors.red),
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  icon: const Icon(Icons.restart_alt),
+                  label: Text(l.factoryResetButton),
+                  onPressed: _factoryReset,
+                ),
+              ]),
             ),
           ]),
           Container(

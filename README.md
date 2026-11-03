@@ -16,7 +16,7 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The current test build **L0ck-ECP_v0.1.1.apk** is under [Releases](../../releases)
+The current test build **L0ck-ECP_v0.1.2.apk** is under [Releases](../../releases)
 (Android 8.0+, arm64), with its SHA-256 checksum.
 
 ### One message, several paths (PACE)
@@ -48,6 +48,11 @@ its time, delivery and read state. Public MeshCore channels are ignored.
   the coordinates, distance and bearing, and can open the point in an offline map
   (OsmAnd, Organic Maps). A report can be sent from the home screen to a team and to
   several contacts at once.
+- **Group setup at the base:** an offline page on a laptop (`tools/ecp_base`) scans every
+  phone's contact QR, creates the teams and shows one group bundle as a series of QR
+  codes; each phone scans it and gets every contact (verified), its teams, the team's
+  LoRa channel and the PACE order. One scan per phone instead of everyone scanning
+  everyone.
 - **PANIC and COMPROMISED** on the PIN screen, without the PIN, while the app runs: PANIC
   sends the configured status, position and text to contacts and teams over every channel
   at once; COMPROMISED (with a confirmation elsewhere on the screen) reports "compromised"
@@ -56,8 +61,8 @@ its time, delivery and read state. Public MeshCore channels are ignored.
   (Argon2id, key bound to the device), duress code, screen protection, notifications
   without content, emergency lock by four quick taps. Locking at once, after a delay or
   only by hand; optional fingerprint to return to the running profile (only with PANIC
-  and COMPROMISED on, PIN again after a restart, the emergency lock or 8 hours). No
-  accounts, no sign-up.
+  and COMPROMISED on, PIN again after a restart, the emergency lock or 8 hours). Factory
+  reset in the settings. No accounts, no sign-up.
 - **Operation:** runs in the background and with the screen locked; per-channel reconnect
   in the settings; Czech and English.
 
@@ -76,6 +81,7 @@ or official rescue services.
 | `packages/ecp_core/` | ECP envelope, cryptography, contact card, reports, PACE router (pure Dart) |
 | `packages/ecp_meshcore/` | MeshCore companion protocol |
 | `packages/ecp_simplex/` | binding to the SimpleX core (FFI / WebSocket) |
+| `tools/ecp_base/` | offline base page for group setup (open `index.html` in a browser) |
 | `tools/` | laptop test nodes (`ecp_peer`, `bramble-peer`) |
 | `docs/ARCHITECTURE_V2.md` | design, message formats, implementation status, open questions (Czech) |
 
@@ -108,6 +114,8 @@ Components and their licenses:
 | [Briar / Bramble](https://code.briarproject.org/briar/briar) 1.5.24 | GPLv3 |
 | [SimpleX Chat](https://github.com/simplex-chat/simplex-chat) core 7.0.3 | AGPLv3 |
 | [ZXing Android Embedded](https://github.com/journeyapps/zxing-android-embedded) | Apache 2.0 |
+| [jsQR](https://github.com/cozmo/jsQR) 1.4.0 (base page) | Apache 2.0 |
+| [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (base page) | MIT |
 | [SQLCipher](https://www.zetetic.net/sqlcipher/) (via `sqlite3`) | BSD-style |
 | [libsodium](https://libsodium.org) (via `sodium`) | ISC |
 | [Flutter](https://flutter.dev), [drift](https://drift.simonbinder.eu), `cryptography` | BSD / MIT / Apache 2.0 |
@@ -140,7 +148,7 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Aktuální testovací sestavení **L0ck-ECP_v0.1.1.apk** je v [Releases](../../releases)
+Aktuální testovací sestavení **L0ck-ECP_v0.1.2.apk** je v [Releases](../../releases)
 (Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání.
 
 ### Jedna zpráva, víc cest (PACE)
@@ -170,6 +178,10 @@ Veřejné kanály MeshCore aplikace ignoruje.
   paketu a nejvýš dvou SMS. Poloha z GPS bez služeb Google; příjemce vidí souřadnice,
   vzdálenost a azimut a může bod otevřít v offline mapě (OsmAnd, Organic Maps). Hlášení
   jde z úvodní obrazovky poslat týmu i více kontaktům najednou.
+- **Hromadné nastavení na základně:** offline stránka na notebooku (`tools/ecp_base`)
+  načte kontaktní QR všech telefonů, založí týmy a ukáže jeden balíček skupiny jako sérii
+  QR kódů; každý telefon ho načte a dostane všechny kontakty (ověřené), svoje týmy, kanál
+  LoRa týmu a pořadí PACE. Jedno skenování na telefon místo skenování každý s každým.
 - **PANIC a KOMPROMITOVÁN** na obrazovce PINu, bez PINu, dokud aplikace běží: PANIC pošle
   nastavený stav, polohu a text kontaktům a týmům všemi kanály najednou; KOMPROMITOVÁN
   (s potvrzením na jiném místě obrazovky) ohlásí kompromitaci a zničí profil jako duress
@@ -179,7 +191,7 @@ Veřejné kanály MeshCore aplikace ignoruje.
   bez obsahu, nouzové uzamčení čtyřmi rychlými klepnutími. Zamykání ihned, po zvolené
   době nebo jen ručně; volitelně otisk prstu pro návrat do běžícího profilu (jen se
   zapnutým PANIC a KOMPROMITOVÁN, PIN znovu po restartu, nouzovém zamknutí a po 8 h).
-  Žádné účty ani registrace.
+  Obnovení továrního nastavení v nastavení. Žádné účty ani registrace.
 - **Provoz:** běží na pozadí i se zamčenou obrazovkou; obnovení jednotlivých kanálů
   v nastavení; čeština a angličtina.
 
@@ -198,6 +210,7 @@ složky.
 | `packages/ecp_core/` | obálka ECP, kryptografie, kontaktní karta, hlášení, PACE router (čistý Dart) |
 | `packages/ecp_meshcore/` | companion protokol MeshCore |
 | `packages/ecp_simplex/` | napojení na jádro SimpleX (FFI / WebSocket) |
+| `tools/ecp_base/` | offline stránka základny pro hromadné nastavení (`index.html` v prohlížeči) |
 | `tools/` | testovací uzly pro laptop (`ecp_peer`, `bramble-peer`) |
 | `docs/ARCHITECTURE_V2.md` | návrh, formáty zpráv, stav implementace, otevřené otázky |
 
@@ -230,6 +243,8 @@ Použité komponenty a jejich licence:
 | [Briar / Bramble](https://code.briarproject.org/briar/briar) 1.5.24 | GPLv3 |
 | [SimpleX Chat](https://github.com/simplex-chat/simplex-chat) core 7.0.3 | AGPLv3 |
 | [ZXing Android Embedded](https://github.com/journeyapps/zxing-android-embedded) | Apache 2.0 |
+| [jsQR](https://github.com/cozmo/jsQR) 1.4.0 (stránka základny) | Apache 2.0 |
+| [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4 (stránka základny) | MIT |
 | [SQLCipher](https://www.zetetic.net/sqlcipher/) (přes `sqlite3`) | BSD-style |
 | [libsodium](https://libsodium.org) (přes `sodium`) | ISC |
 | [Flutter](https://flutter.dev), [drift](https://drift.simonbinder.eu), `cryptography` | BSD / MIT / Apache 2.0 |

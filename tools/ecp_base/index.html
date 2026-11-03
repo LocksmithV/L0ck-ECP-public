@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Offline only: no request may leave the page -->
+<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>L0ck-ECP Base</title>
+<style>
+  :root {
+    --bg: #0a0c09; --panel: rgba(17, 20, 16, .84); --widget: rgba(22, 26, 19, .92); --border: #2d4a1e;
+    --green: #5a8a2e; --green-light: #8faf6a; --orange: #ef9f27; --text: #c8d4b8;
+    --data: #d4e8b0; --dim: #7a9a58; --red: #e24b4a; --ok: #22c55e;
+    --mono: 'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  /* The L0ck-ECP artwork (docs/images/L0ck-ECP_background.png), darkened under the content */
+  body { margin: 0; color: var(--text); font: 15px/1.45 system-ui, sans-serif; min-height: 100vh;
+    background: linear-gradient(rgba(10, 12, 9, .80), rgba(10, 12, 9, .90)),
+      url(img/background.jpg) center top / cover fixed, var(--bg); }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px;
+    background: linear-gradient(rgba(10, 12, 9, .96), rgba(10, 12, 9, .88));
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; backdrop-filter: blur(3px); }
+  header img { height: 56px; border-radius: 12px; box-shadow: 0 0 18px rgba(90, 138, 46, .25); }
+  .brand { font: 700 30px/1 var(--mono); letter-spacing: 1px; }
+  .brand .l { color: var(--green-light); } .brand .e { color: var(--orange); } .brand .d { color: var(--dim); font-weight: 300; }
+  .tag { font: 11px var(--mono); letter-spacing: 4px; color: var(--dim); margin-top: 6px; }
+  header .sub { font: 12px var(--mono); color: var(--orange); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  header .spacer { flex: 1; }
+  /* CZ | EN switch: the active language lit like the app's segmented button */
+  .lang { display: inline-flex; border: 1px solid var(--green); }
+  .lang button { border: 0; border-radius: 0; padding: 7px 12px; font-weight: 700; letter-spacing: 2px;
+    background: transparent; color: var(--dim); }
+  .lang button + button { border-left: 1px solid var(--green); }
+  .lang button[aria-pressed=true] { background: var(--green); color: var(--bg); }
+  .channels { font: 11px var(--mono); letter-spacing: 2px; color: var(--dim); text-align: right; }
+  .channels b { color: var(--green-light); font-weight: 500; }
+  .channels b.e { color: var(--orange); }
+  @media (max-width: 760px) { .channels { display: none; } .brand { font-size: 22px; } header img { height: 42px; } }
+  main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 40px; display: grid; gap: 18px; }
+  /* HUD panels with corner brackets, like the artwork */
+  section { position: relative; background: var(--panel); border: 1px solid rgba(45, 74, 30, .55);
+    padding: 16px 18px; backdrop-filter: blur(2px); }
+  section::before, section::after { content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none; }
+  section::before { top: -1px; left: -1px; border-top: 2px solid var(--green); border-left: 2px solid var(--green); }
+  section::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--green); border-right: 2px solid var(--green); }
+  h2 { margin: 0 0 12px; font: 13px var(--mono); letter-spacing: 3px; color: var(--green-light); text-transform: uppercase; }
+  h2 b { color: var(--orange); margin-right: 10px; }
+  p.help { color: var(--dim); font-size: 13px; margin: 0 0 10px; }
+  p.intro { font: 13px var(--mono); color: var(--text); margin: 0; padding: 10px 14px; border-left: 2px solid var(--green);
+    background: var(--panel); }
+  button, select, input[type=text] { font: 14px var(--mono); color: var(--text); background: var(--widget);
+    border: 1px solid var(--border); border-radius: 2px; padding: 7px 12px; }
+  button { cursor: pointer; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; }
+  button:hover:not(:disabled) { border-color: var(--green-light); color: var(--data); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.main { background: var(--green); color: var(--bg); border-color: var(--green); font-weight: 700; }
+  button.main:hover:not(:disabled) { background: var(--green-light); color: var(--bg); }
+  button.danger { color: var(--red); border-color: var(--red); background: rgba(226, 75, 74, .08); }
+  button.small { padding: 2px 8px; }
+  input[type=checkbox], input[type=radio] { accent-color: var(--green); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  video { width: 100%; max-height: 340px; background: #000; border: 1px solid var(--border); }
+  #frame { display: none; }
+  ul.list { list-style: none; margin: 0; padding: 0; }
+  ul.list li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(45, 74, 30, .35); }
+  ul.list li .name { color: var(--data); font: 600 15px var(--mono); flex: 1; }
+  ul.list li .meta { color: var(--dim); font: 12px var(--mono); }
+  ul.list li .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+  .team { border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 10px; background: var(--widget); }
+  .team .head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .team .head input[type=text] { flex: 1; min-width: 160px; color: var(--data); }
+  .team label { display: inline-flex; gap: 6px; align-items: center; margin: 3px 14px 3px 0; }
+  .pace li { display: flex; gap: 12px; align-items: center; padding: 5px 0; font-family: var(--mono); }
+  .pace .n { color: var(--orange); width: 18px; font-weight: 700; }
+  .warn { display: flex; gap: 12px; align-items: center; border: 1px solid var(--orange); color: var(--orange);
+    font: 13px var(--mono); letter-spacing: 1px; padding: 10px 14px; margin: 0 0 12px; background: rgba(239, 159, 39, .06); }
+  .warn::before { content: '⚠'; font-size: 22px; }
+  .err { color: var(--red); font-size: 13px; min-height: 1.2em; }
+  .okmsg { color: var(--ok); font: 13px var(--mono); min-height: 1.2em; }
+  #show { text-align: center; }
+  #qr { background: #fff; padding: 16px; display: inline-block; margin: 10px 0; box-shadow: 0 0 0 1px var(--green), 0 0 30px rgba(90, 138, 46, .25); }
+  #qr canvas { display: block; width: min(70vh, 86vw); height: auto; image-rendering: pixelated; }
+  #part { font: 700 28px var(--mono); color: var(--orange); letter-spacing: 3px; }
+  /* Step overview under the header: what is done, what is next */
+  nav.steps { position: sticky; top: 85px; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr);
+    max-width: 1100px; margin: 0 auto; gap: 6px; padding: 10px 16px 0; }
+  nav.steps a { display: block; text-decoration: none; font: 12px var(--mono); letter-spacing: 1px; color: var(--dim);
+    background: rgba(10, 12, 9, .9); border: 1px solid var(--border); border-top: 3px solid var(--border); padding: 6px 10px; }
+  nav.steps a b { color: var(--text); margin-right: 6px; }
+  nav.steps a span { display: block; color: var(--green-light); font-size: 11px; margin-top: 2px; }
+  nav.steps a span[data-t] { display: inline; color: var(--text); font-size: 12px; margin: 0; text-transform: uppercase; }
+  nav.steps a.done { border-top-color: var(--green); }
+  nav.steps a.done span { color: var(--ok); }
+  nav.steps a.ready { border-top-color: var(--orange); }
+  nav.steps a.ready span { color: var(--orange); }
+  @media (max-width: 760px) { nav.steps { top: 70px; grid-template-columns: repeat(2, 1fr); } }
+  section { scroll-margin-top: 160px; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 8px 16px 32px; text-align: center; }
+  footer .ready { font: 12px var(--mono); letter-spacing: 4px; color: var(--dim); margin-bottom: 18px; }
+  footer .ready b { color: var(--orange); font-weight: 500; }
+  footer .author { display: inline-flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: center;
+    font: 13px var(--mono); color: var(--dim); padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); }
+  footer .author img { height: 28px; border-radius: 6px; }
+  footer .author .who { color: var(--text); }
+  footer a { color: var(--green-light); text-decoration: none; border-bottom: 1px dotted var(--green); }
+  footer a:hover { color: var(--orange); border-color: var(--orange); }
+</style>
+</head>
+<body>
+<header>
+  <img src="img/logo.jpg" alt="">
+  <div>
+    <div class="brand"><span class="l">L0ck</span><span class="d">-</span><span class="e">ECP</span></div>
+    <div class="tag">EMERGENCY COORDINATION PLATFORM</div>
+    <div class="sub" data-t="title"></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="channels">P <b>SIMPLEX</b> · A <b>BRAMBLE</b><br>C <b>LORA</b> · E <b class="e">SMS</b></div>
+  <div class="lang" role="group" aria-label="Jazyk / Language">
+    <button type="button" data-lang="cs">CZ</button><button type="button" data-lang="en">EN</button>
+  </div>
+  <button class="danger" id="wipe" data-t="wipe"></button>
+</header>
+<nav class="steps">
+  <a href="#s1" id="st1"><b>1</b><span data-t="s1"></span><span class="st"></span></a>
+  <a href="#s2" id="st2"><b>2</b><span data-t="s2"></span><span class="st"></span></a>
+  <a href="#s3" id="st3"><b>3</b><span data-t="s3"></span><span class="st"></span></a>
+  <a href="#s4" id="st4"><b>4</b><span data-t="s4"></span><span class="st"></span></a>
+</nav>
+
+<main>
+  <p class="intro" data-t="intro"></p>
+
+  <section id="s1">
+    <h2><b>1</b><span data-t="s1"></span></h2>
+    <div class="cols">
+      <div>
+        <p class="help" data-t="s1help"></p>
+        <div class="row" style="margin-bottom:8px">
+          <button class="main" id="cam" data-t="camStart"></button>
+          <select id="cams" hidden></select>
+        </div>
+        <video id="video" playsinline muted hidden></video>
+        <canvas id="frame"></canvas>
+        <div class="row" style="margin-top:8px">
+          <input type="text" id="paste" style="flex:1" data-tp="pastePh" autocomplete="off" spellcheck="false">
+          <button id="addPaste" data-t="add"></button>
+        </div>
+        <div class="okmsg" id="scanOk"></div>
+        <div class="err" id="scanErr"></div>
+      </div>
+      <div>
+        <h2 id="membersTitle"></h2>
+        <ul class="list" id="members"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <h2><b>2</b><span data-t="s2"></span></h2>
+    <p class="help" data-t="s2help"></p>
+    <div id="teams"></div>
+    <div class="row">
+      <button id="addTeam" data-t="addTeam"></button>
+      <label><input type="radio" name="lora" value="-1" id="loraNone" checked> <span data-t="loraNone"></span></label>
+    </div>
+  </section>
+
+  <section id="s3">
+    <h2><b>3</b><span data-t="s3"></span></h2>
+    <label><input type="checkbox" id="paceOn"> <span data-t="paceOn"></span></label>
+    <ul class="list pace" id="pace"></ul>
+  </section>
+
+  <section id="s4">
+    <h2><b>4</b><span data-t="s4"></span></h2>
+    <p class="warn" data-t="s4warn"></p>
+    <div class="row">
+      <button class="main" id="make" data-t="make"></button>
+      <span class="err" id="makeErr"></span>
+    </div>
+    <div id="show" hidden>
+      <div id="part"></div>
+      <div id="qr"><canvas id="qrc"></canvas></div>
+      <div class="row" style="justify-content:center">
+        <button id="prev">◀</button>
+        <label><input type="checkbox" id="auto"> <span data-t="auto"></span></label>
+        <button id="next">▶</button>
+      </div>
+      <p class="help" id="sizeInfo"></p>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="ready"><b>READY</b> · SECURE · COORDINATE</div>
+  <div class="author">
+    <img src="img/logo.jpg" alt="L0ck-ECP">
+    <span>L0ck-ECP · <span data-t="author"></span> <span class="who">L0ckSm1thV</span></span>
+    <a href="https://github.com/LocksmithV" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="https://l0cksm1thv.duckdns.org" target="_blank" rel="noopener noreferrer">l0cksm1thv.duckdns.org</a>
+    <span>AGPLv3</span>
+  </div>
+</footer>
+
+<script src="vendor/jsQR.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="bundle.js"></script>
+<script src="base.js"></script>
+</body>
+</html>

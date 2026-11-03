@@ -22,10 +22,11 @@ import 'widgets.dart';
 /// identity, each channel with its state, and buttons for reports, the own contact card,
 /// contacts and teams.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.messaging, required this.security});
+  const HomeScreen({super.key, required this.messaging, required this.security, required this.onFactoryReset});
 
   final MessagingService messaging;
   final SecurityService security;
+  final Future<void> Function() onFactoryReset;
 
   Session get session => messaging.session;
 
@@ -78,7 +79,7 @@ class HomeScreen extends StatelessWidget {
         },
       );
 
-  Widget _settings() => SettingsScreen(messaging: messaging, security: security);
+  Widget _settings() => SettingsScreen(messaging: messaging, security: security, onFactoryReset: onFactoryReset);
 
   /// A report to anyone: the form first, then the recipients (teams and contacts together).
   void _report(BuildContext context) => showReportMenu(context, (type, payload) async {

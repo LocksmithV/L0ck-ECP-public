@@ -1,3 +1,4 @@
+import 'package:ecp_core/ecp_core.dart' show GroupBundleAssembler;
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
@@ -6,6 +7,7 @@ import '../messaging/messaging_service.dart';
 import '../platform/scanner.dart';
 import 'contact_detail_screen.dart';
 import 'conversation_screen.dart';
+import 'group_import.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -17,7 +19,14 @@ class ContactsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(context.l.contacts)),
+      appBar: AppBar(title: Text(context.l.contacts), actions: [
+          IconButton(
+            tooltip: context.l.groupLoad,
+            icon: const Icon(Icons.qr_code_scanner, color: L0ckColors.greenLight),
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => GroupImportScreen(messaging: messaging))),
+          ),
+        ]),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: L0ckColors.green,
         foregroundColor: L0ckColors.bg,
@@ -170,6 +179,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
               onPressed: () async {
                 final code = await scanQr(prompt: context.l.scanPrompt);
                 if (code == null || !mounted) return;
+                if (GroupBundleAssembler.isPart(code)) {
+                  // The base laptop's group bundle, not a contact: its own screen
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                      builder: (_) => GroupImportScreen(messaging: widget.messaging, first: code)));
+                  return;
+                }
                 _link.text = code;
                 await _add(scanned: true);
               },

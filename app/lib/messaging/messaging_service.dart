@@ -362,6 +362,43 @@ class MessagingService {
     channelsChanged.value++;
   }
 
+  // --- group setup from the base laptop (tools/ecp_base) ---
+
+  /// Sets this phone up from a [GroupBundle]: the other members become contacts, verified
+  /// (the base saw every phone in person); the teams that list this phone are joined, with
+  /// the other members as team members; the radio moves to the chosen team's LoRa channel
+  /// when this phone is in that team; the PACE order is taken over. Every phone imports the
+  /// same bundle, so nobody needs to be told. Null when this phone is not in the bundle.
+  Future<({int contacts, List<Team> teams, Team? lora, bool pace})?> importGroup(GroupBundle b) async {
+    final self = b.indexOf(session.identity.publicKey);
+    if (self == null) return null;
+    final ids = <int, int>{};
+    for (final (i, m) in b.members.indexed) {
+      if (i == self) continue;
+      switch (await addContactFromUri(m.toUri(), verified: true)) {
+        case ContactAdded(:final contact) || ContactUpdated(:final contact):
+          ids[i] = contact.id;
+        case ContactRejected():
+          break;
+      }
+    }
+    final teams = <int, Team>{};
+    for (final (i, t) in b.teams.indexed) {
+      if (!t.members.contains(self)) continue; // another group's key: not kept
+      final team = await _joinTeam(t.key, t.name);
+      for (final m in t.members) {
+        final id = ids[m];
+        if (id != null) await addTeamMember(team.id, id);
+      }
+      teams[i] = team;
+    }
+    final lora = b.loraTeam == null ? null : teams[b.loraTeam!];
+    if (lora != null) await useTeamLoRa(lora);
+    if (b.pace != null) await setPaceOrder(b.pace!);
+    channelsChanged.value++;
+    return (contacts: ids.length, teams: teams.values.toList(), lora: lora, pace: b.pace != null);
+  }
+
   /// The team's name is a local label: each member may call it as they like.
   Future<void> renameTeam(String id, String name) =>
       (_db.update(_db.teams)..where((t) => t.id.equals(id))).write(TeamsCompanion(name: Value(name)));

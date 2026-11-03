@@ -381,6 +381,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (mounted && _stage == _Stage.locked && _biometricAllowed) _resume();
   }
 
+  /// Settings → App → factory reset: everything goes, as after too many wrong PINs — both
+  /// slots, the hardware key, every database and the channels' data — and setup starts over.
+  Future<void> _factoryReset() async {
+    final security = _security;
+    if (security == null) return;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    setState(() => _stage = _Stage.loading);
+    Notifications.clear().ignore();
+    await _close();
+    await security.wipeAll();
+    _pinAt = null;
+    if (mounted) setState(() => _stage = _Stage.setup);
+  }
+
   Future<void> _wiped() async {
     await _close();
     setState(() => _stage = _Stage.setup);
@@ -413,7 +427,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           onBiometric: _biometricAllowed ? _fingerprint : null,
         );
       case _Stage.unlocked:
-        return HomeScreen(messaging: _messaging!, security: security!);
+        return HomeScreen(messaging: _messaging!, security: security!, onFactoryReset: _factoryReset);
     }
   }
 }
