@@ -7,7 +7,6 @@ import 'package:l0ck_ecp/data/database.dart';
 import 'package:l0ck_ecp/l10n/lang.dart';
 import 'package:l0ck_ecp/messaging/meshcore_app_transport.dart';
 import 'package:l0ck_ecp/messaging/messaging_service.dart';
-import 'package:l0ck_ecp/platform/radio.dart';
 import 'package:l0ck_ecp/security/security_service.dart';
 import 'package:l0ck_ecp/ui/group_import.dart';
 
@@ -35,7 +34,7 @@ void main() {
     final b = GroupBundle.decode(bundleOf(m).encode());
 
     final r = (await m[0].importGroup(b))!;
-    expect(r.contacts, 2);
+    expect((r.added, r.changed, r.same, r.newTeams), (2, 0, 0, 1));
     expect(r.teams.map((t) => t.name), ['Hlídka'], reason: 'Spojka does not list Alfa');
     expect(r.lora!.name, 'Hlídka');
     expect(r.pace, isTrue);
@@ -53,8 +52,28 @@ void main() {
     expect(rb.teams.first.id, r.teams.first.id);
 
     // Importing twice changes nothing; a phone not in the bundle gets nothing
-    expect((await m[0].importGroup(b))!.contacts, 2);
+    final again = (await m[0].importGroup(b))!;
+    expect((again.added, again.changed, again.same, again.newTeams), (0, 0, 2, 0));
+    expect((again.lora, again.pace, again.nothing), (null, false, true));
     expect(await db.select(db.contacts).get(), hasLength(2));
+
+    // A corrected bundle: only Charlie's new name and number are written
+    final c = b.members[2];
+    final fixed = GroupBundle(
+      members: [
+        b.members[0],
+        b.members[1],
+        ContactCard(name: 'Charlie 2', ecpKey: c.ecpKey, briarLink: c.briarLink, simplexLink: c.simplexLink,
+            phone: '+420 777 000 003'),
+      ],
+      teams: b.teams,
+      loraTeam: b.loraTeam,
+      pace: b.pace,
+    );
+    final third = (await m[0].importGroup(fixed))!;
+    expect((third.added, third.changed, third.same, third.newTeams, third.nothing), (0, 1, 1, 0, false));
+    final charlie = (await db.select(db.contacts).get()).singleWhere((x) => constantTimeEquals(x.ecpKey, c.ecpKey));
+    expect((charlie.name, charlie.phone), ('Charlie 2', '+420 777 000 003'));
     expect(await outsider.importGroup(b), isNull);
     final odb = outsider.session.db;
     expect(await odb.select(odb.contacts).get(), isEmpty);
@@ -81,7 +100,8 @@ void main() {
     expect((await m[0].importGroup(b))!.phone, '+420 600 111 222');
     expect(m[0].ownPhone, '+420 600 111 222');
     expect(m[0].ownPhoneFrom(b), isNull, reason: 'already the own number');
-    expect((await m[0].importGroup(bundle(null)))!.phone, isNull, reason: 'no number: the own one stays');
+    final second = (await m[0].importGroup(bundle(null)))!;
+    expect(second.phone, isNull, reason: 'no number: the own one stays');
     expect(m[0].ownPhone, '+420 600 111 222');
     expect(m[1].ownPhoneFrom(b), isNull, reason: 'Bravo\'s card has none');
 
@@ -128,7 +148,7 @@ void main() {
       await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
       await t.pump();
     }
-    expect(find.text('Hotovo: 1 kontaktů, 0 týmů.'), findsOneWidget);
+    expect(find.text('Hotovo. Kontakty: nové 1, změněné 0, beze změny 0. Nové týmy: 0.'), findsOneWidget);
 
     await t.runAsync(() async {
       for (final p in m) {

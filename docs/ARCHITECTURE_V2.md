@@ -420,6 +420,12 @@ Balíček nese klíče všech týmů, proto jen osobně na základně; stránka 
 `connect-src 'none'`. Shodu formátu hlídá test: `tools/ecp_base/test/bundle_test.js` píše
 fixture, kterou dekóduje `group_bundle_test.dart`.
 
+**Opakovaný balíček a čísla (0.1.5):** načtení balíčku znovu (opravený na základně) zapíše
+jen rozdíly: u známého kontaktu jméno a kanály z karty, které se liší (karta žádný kanál
+nemaže), kanál LoRa a pořadí PACE jen když nesedí. `GroupImport` hlásí kontakty nové,
+změněné a beze změny a nové týmy. Stránka základny přijme jen číslo s mezinárodní
+předvolbou (`+`, 8–15 číslic, E.164) a hlídá ho už při psaní.
+
 **Základna a balíček, opravy (0.1.3–0.1.4):** skener QR je v aplikaci samostatná aktivita
 Androidu, takže aplikace odešla do pozadí a se zamykáním „ihned“ se uprostřed načítání
 balíčku zamkla. Teď skener a dialog viditelnosti Bluetooth drží `LockHold`: zamkne se až po

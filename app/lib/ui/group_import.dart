@@ -84,7 +84,7 @@ class _GroupImportScreenState extends State<GroupImportScreen> {
       if (r == null) {
         _error = l.groupNotMember;
       } else {
-        _done = l.groupDone(r.contacts, r.teams.length);
+        _done = r.nothing ? l.groupNoChange : l.groupDone(r.added, r.changed, r.same, r.newTeams);
         if (r.phone != null) {
           // As in the settings: layer E needs the SMS permissions and a fresh look at the SIM
           try {

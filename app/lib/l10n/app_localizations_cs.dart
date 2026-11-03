@@ -1428,8 +1428,8 @@ class AppLocalizationsCs extends AppLocalizations {
   String get groupApply => 'NASTAVIT TELEFON';
 
   @override
-  String groupDone(int contacts, int teams) {
-    return 'Hotovo: $contacts kontaktů, $teams týmů.';
+  String groupDone(int added, int changed, int same, int teams) {
+    return 'Hotovo. Kontakty: nové $added, změněné $changed, beze změny $same. Nové týmy: $teams.';
   }
 
   @override
@@ -1465,4 +1465,8 @@ class AppLocalizationsCs extends AppLocalizations {
   String groupOwnPhone(String phone) {
     return 'Tvoje číslo pro SMS: $phone';
   }
+
+  @override
+  String get groupNoChange =>
+      'Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo.';
 }

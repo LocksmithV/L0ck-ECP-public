@@ -408,7 +408,7 @@
   "groupLora": "LoRa radio: channel of team {team}",
   "groupPace": "PACE order: {order}",
   "groupApply": "SET UP THIS PHONE",
-  "groupDone": "Done: {contacts} contacts, {teams} teams.",
+  "groupDone": "Done. Contacts: {added} new, {changed} changed, {same} unchanged. New teams: {teams}.",
   "groupAgain": "Start over",
   "factoryReset": "Factory reset",
   "factoryResetHelp": "Erases the profile and the decoy, contacts, teams, messages, keys and settings on this phone. The app then starts again as after installing. Nothing is sent to contacts. It cannot be undone.",
@@ -417,5 +417,6 @@
   "factoryResetConfirm": "ERASE ALL",
   "groupWorking": "Setting up… contacts {done} of {total}",
   "groupFailed": "Setup failed: {error}",
-  "groupOwnPhone": "Your SMS number: {phone}"
+  "groupOwnPhone": "Your SMS number: {phone}",
+  "groupNoChange": "Done. The phone already matches the bundle; nothing changed."
 }

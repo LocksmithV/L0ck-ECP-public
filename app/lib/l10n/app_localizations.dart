@@ -2549,8 +2549,8 @@ abstract class AppLocalizations {
   /// No description provided for @groupDone.
   ///
   /// In cs, this message translates to:
-  /// **'Hotovo: {contacts} kontaktů, {teams} týmů.'**
-  String groupDone(int contacts, int teams);
+  /// **'Hotovo. Kontakty: nové {added}, změněné {changed}, beze změny {same}. Nové týmy: {teams}.'**
+  String groupDone(int added, int changed, int same, int teams);
 
   /// No description provided for @groupAgain.
   ///
@@ -2605,6 +2605,12 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Tvoje číslo pro SMS: {phone}'**
   String groupOwnPhone(String phone);
+
+  /// No description provided for @groupNoChange.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo.'**
+  String get groupNoChange;
 }
 
 class _AppLocalizationsDelegate

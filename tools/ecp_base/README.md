@@ -11,7 +11,7 @@ phone, sets up the teams, and shows one **group bundle** as a series of QR codes
 phone scans the bundle in the L0ck-ECP app and is set up in one go. For ten people that
 is one scan per phone instead of about ninety mutual scans.
 
-> **Status: testing**, like the app. Use it together with L0ck-ECP 0.1.4 or newer.
+> **Status: testing**, like the app. Use it together with L0ck-ECP 0.1.5 or newer.
 
 ### What a phone gets from the bundle
 
@@ -106,7 +106,7 @@ založí týmy a ukáže jeden **balíček skupiny** jako sérii QR kódů. Kaž
 v aplikaci L0ck-ECP a nastaví se najednou. Pro deset lidí je to jedno skenování na
 telefon místo zhruba devadesáti vzájemných.
 
-> **Stav: testování**, stejně jako aplikace. Používej s L0ck-ECP 0.1.4 nebo novější.
+> **Stav: testování**, stejně jako aplikace. Používej s L0ck-ECP 0.1.5 nebo novější.
 
 ### Co telefon z balíčku dostane
 

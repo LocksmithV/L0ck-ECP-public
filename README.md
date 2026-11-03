@@ -16,7 +16,7 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The current test build **L0ck-ECP_v0.1.4.apk** is under [Releases](../../releases)
+The current test build **L0ck-ECP_v0.1.5.apk** is under [Releases](../../releases)
 (Android 8.0+, arm64), with its SHA-256 checksum.
 
 ### One message, several paths (PACE)
@@ -150,7 +150,7 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Aktuální testovací sestavení **L0ck-ECP_v0.1.4.apk** je v [Releases](../../releases)
+Aktuální testovací sestavení **L0ck-ECP_v0.1.5.apk** je v [Releases](../../releases)
 (Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání.
 
 ### Jedna zpráva, víc cest (PACE)

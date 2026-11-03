@@ -68,6 +68,13 @@
     };
   }
 
+  /** An international number: `+`, country code, 8–15 digits in all (E.164), spaces allowed. */
+  function validPhone(p) {
+    const s = String(p).trim();
+    const digits = s.replace(/ /g, '');
+    return /^\+[1-9][0-9 ]*$/.test(s) && digits.length >= 9 && digits.length <= 16;
+  }
+
   /**
    * The same card with another name and phone number (empty phone: none), as the base
    * corrects them before the bundle; every other field stays as the phone made it.
@@ -76,7 +83,7 @@
     const n = utf8.encode(String(name).trim());
     if (n.length < 1 || n.length > MAX_NAME) throw new Error('name');
     const p = String(phone || '').trim().replace(/\s+/g, ' ');
-    if (p && !/^\+?[0-9 ]{3,20}$/.test(p)) throw new Error('phone');
+    if (p && !validPhone(p)) throw new Error('phone');
     const fields = new Map(card.fields);
     fields.set(0x01, n);
     if (p) fields.set(0x05, utf8.encode(p));
@@ -128,7 +135,7 @@
     return parts;
   }
 
-  const api = { parseCard, withNameAndPhone, encodeBundle, qrParts, random, hex, b64urlEncode, b64urlDecode, MAX_TEAM_NAME, MAX_NAME };
+  const api = { parseCard, withNameAndPhone, validPhone, encodeBundle, qrParts, random, hex, b64urlEncode, b64urlDecode, MAX_TEAM_NAME, MAX_NAME };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.EcpBundle = api;
 })(typeof self !== 'undefined' ? self : this);

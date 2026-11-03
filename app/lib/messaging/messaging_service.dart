@@ -85,6 +85,31 @@ class ContactRejected extends AddContactResult {
   final String reason;
 }
 
+/// What loading a group bundle did (MessagingService.importGroup): contacts new, changed
+/// and already as in the bundle; this phone's teams and how many of them are new; the team
+/// whose LoRa channel the radio moved to now, whether the PACE order changed, and the own
+/// number taken over. When the same bundle is loaded twice, the second time changes nothing.
+class GroupImport {
+  const GroupImport({
+    required this.added,
+    required this.changed,
+    required this.same,
+    required this.teams,
+    required this.newTeams,
+    this.lora,
+    this.pace = false,
+    this.phone,
+  });
+
+  final int added, changed, same, newTeams;
+  final List<Team> teams;
+  final Team? lora;
+  final bool pace;
+  final String? phone;
+
+  bool get nothing => added == 0 && changed == 0 && newTeams == 0 && lora == null && !pace && phone == null;
+}
+
 /// Settings key for the own phone number (layer E).
 const ownPhoneKey = 'sms.number';
 
@@ -379,41 +404,82 @@ class MessagingService {
   /// gave this phone's own card (typed in there, or corrected) becomes the own number. Every
   /// phone imports the same bundle, so nobody needs to be told. Null when this phone is not
   /// in the bundle. [progress] hears how many of the other members are set up so far.
-  Future<({int contacts, List<Team> teams, Team? lora, bool pace, String? phone})?> importGroup(GroupBundle b,
-      {void Function(int done, int total)? progress}) async {
+  Future<GroupImport?> importGroup(GroupBundle b, {void Function(int done, int total)? progress}) async {
     final self = b.indexOf(session.identity.publicKey);
     if (self == null) return null;
     // First, so that only contacts known before hear of it; the members have it in the bundle
     final phone = ownPhoneFrom(b);
     if (phone != null) await setOwnPhone(phone);
+    // Loaded again (a corrected bundle): only what differs is written
     final ids = <int, int>{};
+    var added = 0, changed = 0, same = 0;
     final total = b.members.length - 1;
-    var done = 0;
     for (final (i, m) in b.members.indexed) {
       if (i == self) continue;
-      progress?.call(done++, total);
-      switch (await addContactFromUri(m.toUri(), verified: true)) {
-        case ContactAdded(:final contact) || ContactUpdated(:final contact):
+      progress?.call(added + changed + same, total);
+      final known = await _db.contactByKey(m.ecpKey);
+      if (known == null) {
+        if (await addContactFromUri(m.toUri(), verified: true) case ContactAdded(:final contact)) {
           ids[i] = contact.id;
-        case ContactRejected():
-          break;
+          added++;
+        }
+        continue;
+      }
+      ids[i] = known.id;
+      final update = _cardChanges(known, m);
+      if (update == null) {
+        same++;
+      } else {
+        await (_db.update(_db.contacts)..where((t) => t.id.equals(known.id))).write(update);
+        changed++;
       }
     }
+    if (changed > 0) await _contactsChanged();
     final teams = <int, Team>{};
+    var newTeams = 0;
     for (final (i, t) in b.teams.indexed) {
       if (!t.members.contains(self)) continue; // another group's key: not kept
+      final id = await teamIdFor(t.key);
+      if (await (_db.select(_db.teams)..where((x) => x.id.equals(id))).getSingleOrNull() == null) newTeams++;
       final team = await _joinTeam(t.key, t.name);
       for (final m in t.members) {
         final id = ids[m];
-        if (id != null) await addTeamMember(team.id, id);
+        if (id != null) await addTeamMember(team.id, id); // insert-or-ignore
       }
       teams[i] = team;
     }
-    final lora = b.loraTeam == null ? null : teams[b.loraTeam!];
+    var lora = b.loraTeam == null ? null : teams[b.loraTeam!];
+    if (lora != null &&
+        await _db.setting(radioChannelKey) == encodeChannelKey(await teamLoraKey(lora.key))) {
+      lora = null; // the radio is on that channel already
+    }
     if (lora != null) await useTeamLoRa(lora);
-    if (b.pace != null) await setPaceOrder(b.pace!);
+    final pace = b.pace != null && b.pace!.join() != paceOrder.join();
+    if (pace) await setPaceOrder(b.pace!);
     channelsChanged.value++;
-    return (contacts: ids.length, teams: teams.values.toList(), lora: lora, pace: b.pace != null, phone: phone);
+    return GroupImport(
+        added: added, changed: changed, same: same, teams: teams.values.toList(), newTeams: newTeams,
+        lora: lora, pace: pace, phone: phone);
+  }
+
+  /// What a bundle card would change on a known contact: the name the base gave it, the
+  /// channels the card has (a card never removes one) and the verified mark. Null: nothing.
+  ContactsCompanion? _cardChanges(Contact c, ContactCard m) {
+    Value<T> diff<T>(T? card, T? now) => card != null && card != now ? Value(card) : const Value.absent();
+    final update = ContactsCompanion(
+      name: m.name != c.name ? Value(m.name) : const Value.absent(),
+      briarLink: diff(m.briarLink, c.briarLink),
+      simplexLink: diff(m.simplexLink, c.simplexLink),
+      phone: diff(m.phone, c.phone),
+      meshtasticId: diff(m.meshtasticNodeId, c.meshtasticId),
+      meshcoreKey: m.meshcoreKey != null && !constantTimeEquals(m.meshcoreKey!, c.meshcoreKey ?? const [])
+          ? Value(m.meshcoreKey)
+          : const Value.absent(),
+      verified: c.verified ? const Value.absent() : const Value(true),
+    );
+    final any = [update.name, update.briarLink, update.simplexLink, update.phone, update.meshtasticId,
+      update.meshcoreKey, update.verified].any((v) => v.present);
+    return any ? update : null;
   }
 
   /// The number on this phone's own card in [b] when it differs from the own number, else

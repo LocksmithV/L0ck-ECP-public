@@ -956,10 +956,16 @@
     }
   },
   "groupApply": "NASTAVIT TELEFON",
-  "groupDone": "Hotovo: {contacts} kontaktů, {teams} týmů.",
+  "groupDone": "Hotovo. Kontakty: nové {added}, změněné {changed}, beze změny {same}. Nové týmy: {teams}.",
   "@groupDone": {
     "placeholders": {
-      "contacts": {
+      "added": {
+        "type": "int"
+      },
+      "changed": {
+        "type": "int"
+      },
+      "same": {
         "type": "int"
       },
       "teams": {
@@ -999,5 +1005,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "groupNoChange": "Hotovo. Telefon už je nastavený podle balíčku, nic se nezměnilo."
 }

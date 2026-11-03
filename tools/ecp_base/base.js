@@ -23,7 +23,7 @@ const T = {
     foundMsg: 'Zkontroluj jméno a číslo, pak Přidat.',
     nameLbl: 'Jméno', phoneLbl: 'Telefon (SMS)',
     accept: 'Přidat', save: 'Uložit', retry: 'Znovu', edit: 'Upravit',
-    nameBad: 'Jméno musí mít 1–24 B.', phoneBad: 'Číslo může obsahovat jen +, číslice a mezery.',
+    nameBad: 'Jméno musí mít 1–24 B.', phoneBad: 'Číslo s mezinárodní předvolbou, např. +420 600 123 456 (8–15 číslic).',
     saved: (n) => `Uloženo: ${n}`,
     members: (n) => `Načteno: ${n}`,
     noMembers: 'Zatím nikdo.',
@@ -76,7 +76,7 @@ const T = {
     foundMsg: 'Check the name and number, then Add.',
     nameLbl: 'Name', phoneLbl: 'Phone (SMS)',
     accept: 'Add', save: 'Save', retry: 'Again', edit: 'Edit',
-    nameBad: 'The name must be 1–24 B.', phoneBad: 'A number may hold only +, digits and spaces.',
+    nameBad: 'The name must be 1–24 B.', phoneBad: 'A number with the country code, e.g. +420 600 123 456 (8–15 digits).',
     saved: (n) => `Saved: ${n}`,
     members: (n) => `Scanned: ${n}`,
     noMembers: 'Nobody yet.',
@@ -330,6 +330,7 @@ function setScan(mode, card = null, msg = '', index = -1) {
   if (card) {
     $('cName').value = card.name;
     $('cPhone').value = card.phone || '';
+    $('cPhone').oninput?.();
   }
   renderScan();
   if (mode === 'found' || mode === 'edit') $('cName').focus();
@@ -523,6 +524,13 @@ $('addPaste').onclick = () => { loadCard($('paste').value); $('paste').value = '
 $('accept').onclick = accept;
 $('retry').onclick = again;
 for (const f of ['cName', 'cPhone']) $(f).onkeydown = (e) => { if (e.key === 'Enter') accept(); };
+// The number is checked while it is typed: red field and the hint until it is international
+$('cPhone').oninput = () => {
+  const v = $('cPhone').value.trim();
+  const bad = v !== '' && !EcpBundle.validPhone(v);
+  $('cPhone').classList.toggle('bad', bad);
+  $('cErr').textContent = bad ? t('phoneBad') : '';
+};
 $('paste').onkeydown = (e) => { if (e.key === 'Enter') $('addPaste').click(); };
 $('addTeam').onclick = () => {
   state.teams.push({ name: t('teamDefault', state.teams.length + 1), key: EcpBundle.random(32),

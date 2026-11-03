@@ -1431,8 +1431,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupApply => 'SET UP THIS PHONE';
 
   @override
-  String groupDone(int contacts, int teams) {
-    return 'Done: $contacts contacts, $teams teams.';
+  String groupDone(int added, int changed, int same, int teams) {
+    return 'Done. Contacts: $added new, $changed changed, $same unchanged. New teams: $teams.';
   }
 
   @override
@@ -1468,4 +1468,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String groupOwnPhone(String phone) {
     return 'Your SMS number: $phone';
   }
+
+  @override
+  String get groupNoChange =>
+      'Done. The phone already matches the bundle; nothing changed.';
 }

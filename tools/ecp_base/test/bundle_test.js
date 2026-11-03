@@ -34,6 +34,11 @@ assert.equal(B.parseCard('l0ck://c/' + B.b64urlEncode(B.withNameAndPhone(m[0], '
 assert.throws(() => B.withNameAndPhone(m[0], '', null), /name/);
 assert.throws(() => B.withNameAndPhone(m[0], 'x'.repeat(25), null), /name/);
 assert.throws(() => B.withNameAndPhone(m[0], 'Alfa', '12a'), /phone/);
+// Only international numbers: +, country code, 8–15 digits
+for (const ok of ['+420 600 123 456', '+420600123456', '+1 202 555 0143', '+44 20 7946 0958']) assert.ok(B.validPhone(ok), ok);
+for (const bad of ['600 123 456', '00420 600 123 456', '+0 600 123 456', '+420 12', '+420 600 123 456 789 012', '+420-600-123']) {
+  assert.ok(!B.validPhone(bad), bad);
+}
 
 const bundle = B.encodeBundle({
   members: m,
