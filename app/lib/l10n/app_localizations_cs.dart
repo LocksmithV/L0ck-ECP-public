@@ -1645,4 +1645,98 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get rallyPlace => 'Místo srazu';
+
+  @override
+  String get queueTitle => 'Odchozí fronta';
+
+  @override
+  String queueSending(int n, String via) {
+    return 'Odesílá se, čeká na potvrzení: $n ($via)';
+  }
+
+  @override
+  String queueWaiting(int n) {
+    return 'Čeká na spojení: $n';
+  }
+
+  @override
+  String queueConfirm(int n) {
+    return 'Čeká na tvůj souhlas s SMS: $n';
+  }
+
+  @override
+  String get vanishTitle => 'Mizející zprávy';
+
+  @override
+  String get vanishAfter => 'Mazat zprávy starší než';
+
+  @override
+  String get vanishOff => 'Nemazat';
+
+  @override
+  String vanishHours(int n) {
+    return '$n h';
+  }
+
+  @override
+  String vanishDays(int n) {
+    return '$n dní';
+  }
+
+  @override
+  String get vanishHelp =>
+      'Smaže zprávy, hlášení, hlasové zprávy, přílohy a záznamy hovorů ve všech chatech, jen v tomto telefonu. Kontakty a týmy si to nastavují samy.';
+
+  @override
+  String get panicRepeat => 'Opakovat polohu, dokud se nezadá PIN';
+
+  @override
+  String get panicRepeatOff => 'Neopakovat';
+
+  @override
+  String panicRepeatEvery(int n) {
+    return 'Každých $n min';
+  }
+
+  @override
+  String panicRepeating(int n) {
+    return 'Poloha se posílá každých $n min. Zastaví to PIN.';
+  }
+
+  @override
+  String get checkInTitle => 'Kontrolní hlášení';
+
+  @override
+  String get checkInOn => 'Zapnout kontrolní hlášení';
+
+  @override
+  String get checkInEvery => 'Potvrzovat nejpozději každých';
+
+  @override
+  String get checkInHelp =>
+      'Když do nastavené doby nepotvrdíš, že jsi v pořádku (tlačítko na úvodní obrazovce nebo odemknutí PINem), aplikace pošle zvolený stav s polohou stejným příjemcům jako PANIC. 15 minut předem připomene. Funguje, dokud profil běží (ne po restartu telefonu před zadáním PINu).';
+
+  @override
+  String get checkInStatus => 'Stav, který se pošle';
+
+  @override
+  String checkInDue(String time) {
+    return 'Kontrolní hlášení: potvrď do $time';
+  }
+
+  @override
+  String checkInSent(String time) {
+    return 'Kontrolní hlášení odešlo v $time. Potvrzením se pošle „V pořádku“.';
+  }
+
+  @override
+  String get checkInOk => 'JSEM V POŘÁDKU';
+
+  @override
+  String get checkInSoon => 'Kontrolní hlášení za 15 min – potvrď v aplikaci';
+
+  @override
+  String checkInConfirmed(String time) {
+    return 'Potvrzeno. Další do $time.';
+  }
 }

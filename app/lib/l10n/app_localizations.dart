@@ -2929,6 +2929,150 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Místo srazu'**
   String get rallyPlace;
+
+  /// No description provided for @queueTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odchozí fronta'**
+  String get queueTitle;
+
+  /// No description provided for @queueSending.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odesílá se, čeká na potvrzení: {n} ({via})'**
+  String queueSending(int n, String via);
+
+  /// No description provided for @queueWaiting.
+  ///
+  /// In cs, this message translates to:
+  /// **'Čeká na spojení: {n}'**
+  String queueWaiting(int n);
+
+  /// No description provided for @queueConfirm.
+  ///
+  /// In cs, this message translates to:
+  /// **'Čeká na tvůj souhlas s SMS: {n}'**
+  String queueConfirm(int n);
+
+  /// No description provided for @vanishTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Mizející zprávy'**
+  String get vanishTitle;
+
+  /// No description provided for @vanishAfter.
+  ///
+  /// In cs, this message translates to:
+  /// **'Mazat zprávy starší než'**
+  String get vanishAfter;
+
+  /// No description provided for @vanishOff.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nemazat'**
+  String get vanishOff;
+
+  /// No description provided for @vanishHours.
+  ///
+  /// In cs, this message translates to:
+  /// **'{n} h'**
+  String vanishHours(int n);
+
+  /// No description provided for @vanishDays.
+  ///
+  /// In cs, this message translates to:
+  /// **'{n} dní'**
+  String vanishDays(int n);
+
+  /// No description provided for @vanishHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smaže zprávy, hlášení, hlasové zprávy, přílohy a záznamy hovorů ve všech chatech, jen v tomto telefonu. Kontakty a týmy si to nastavují samy.'**
+  String get vanishHelp;
+
+  /// No description provided for @panicRepeat.
+  ///
+  /// In cs, this message translates to:
+  /// **'Opakovat polohu, dokud se nezadá PIN'**
+  String get panicRepeat;
+
+  /// No description provided for @panicRepeatOff.
+  ///
+  /// In cs, this message translates to:
+  /// **'Neopakovat'**
+  String get panicRepeatOff;
+
+  /// No description provided for @panicRepeatEvery.
+  ///
+  /// In cs, this message translates to:
+  /// **'Každých {n} min'**
+  String panicRepeatEvery(int n);
+
+  /// No description provided for @panicRepeating.
+  ///
+  /// In cs, this message translates to:
+  /// **'Poloha se posílá každých {n} min. Zastaví to PIN.'**
+  String panicRepeating(int n);
+
+  /// No description provided for @checkInTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kontrolní hlášení'**
+  String get checkInTitle;
+
+  /// No description provided for @checkInOn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zapnout kontrolní hlášení'**
+  String get checkInOn;
+
+  /// No description provided for @checkInEvery.
+  ///
+  /// In cs, this message translates to:
+  /// **'Potvrzovat nejpozději každých'**
+  String get checkInEvery;
+
+  /// No description provided for @checkInHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Když do nastavené doby nepotvrdíš, že jsi v pořádku (tlačítko na úvodní obrazovce nebo odemknutí PINem), aplikace pošle zvolený stav s polohou stejným příjemcům jako PANIC. 15 minut předem připomene. Funguje, dokud profil běží (ne po restartu telefonu před zadáním PINu).'**
+  String get checkInHelp;
+
+  /// No description provided for @checkInStatus.
+  ///
+  /// In cs, this message translates to:
+  /// **'Stav, který se pošle'**
+  String get checkInStatus;
+
+  /// No description provided for @checkInDue.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kontrolní hlášení: potvrď do {time}'**
+  String checkInDue(String time);
+
+  /// No description provided for @checkInSent.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kontrolní hlášení odešlo v {time}. Potvrzením se pošle „V pořádku“.'**
+  String checkInSent(String time);
+
+  /// No description provided for @checkInOk.
+  ///
+  /// In cs, this message translates to:
+  /// **'JSEM V POŘÁDKU'**
+  String get checkInOk;
+
+  /// No description provided for @checkInSoon.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kontrolní hlášení za 15 min – potvrď v aplikaci'**
+  String get checkInSoon;
+
+  /// No description provided for @checkInConfirmed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Potvrzeno. Další do {time}.'**
+  String checkInConfirmed(String time);
 }
 
 class _AppLocalizationsDelegate

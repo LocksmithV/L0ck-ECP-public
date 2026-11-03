@@ -10,6 +10,7 @@ import '../messaging/messaging_service.dart';
 import '../security/security_service.dart';
 import 'contacts_screen.dart';
 import 'conversation_screen.dart';
+import 'message_bubble.dart' show channelName;
 import 'radio_screen.dart';
 import 'recipients.dart';
 import 'reports.dart';
@@ -75,6 +76,62 @@ class HomeScreen extends StatelessWidget {
                 ]),
               ),
             ),
+          );
+        },
+      );
+
+  /// The check-in, while it is on: by when to confirm, or that it went out; one button.
+  Widget _checkIn(BuildContext context) => ValueListenableBuilder<DateTime?>(
+        valueListenable: messaging.checkInFired,
+        builder: (context, fired, _) => ValueListenableBuilder<DateTime?>(
+          valueListenable: messaging.checkInDue,
+          builder: (context, due, _) {
+            if (!messaging.checkIn.enabled || (due == null && fired == null)) return const SizedBox();
+            final l = context.l;
+            String hm(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+            return Panel(
+              title: l.checkInTitle,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(fired != null ? l.checkInSent(hm(fired)) : l.checkInDue(hm(due!)),
+                    style: TextStyle(color: fired != null ? L0ckColors.red : L0ckColors.text)),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  key: const Key('check-in'),
+                  icon: const Icon(Icons.verified_user_outlined),
+                  label: Text(l.checkInOk),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final confirmed = l.checkInConfirmed;
+                    await messaging.checkedIn();
+                    final next = messaging.checkInDue.value;
+                    if (next != null) messenger.showSnackBar(SnackBar(content: Text(confirmed(hm(next)))));
+                  },
+                ),
+              ]),
+            );
+          },
+        ),
+      );
+
+  /// What is still on its way, shown only while something is.
+  Widget _queue(BuildContext context) =>
+      ValueListenableBuilder<({int sending, Map<String, int> via, int waiting, int confirm})>(
+        valueListenable: messaging.queue,
+        builder: (context, q, _) {
+          if (q.sending + q.waiting + q.confirm == 0) return const SizedBox();
+          final l = context.l;
+          return Panel(
+            title: l.queueTitle,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (q.sending > 0)
+                Text(
+                    l.queueSending(
+                        q.sending, [for (final e in q.via.entries) '${channelName(e.key)} ${e.value}'].join(', ')),
+                    key: const Key('queue-sending'),
+                    style: const TextStyle(color: L0ckColors.text)),
+              if (q.waiting > 0) Text(l.queueWaiting(q.waiting), style: const TextStyle(color: L0ckColors.orange)),
+              if (q.confirm > 0) Text(l.queueConfirm(q.confirm), style: const TextStyle(color: L0ckColors.orange)),
+            ]),
           );
         },
       );
@@ -192,6 +249,8 @@ class HomeScreen extends StatelessWidget {
         Expanded(
           child: ListView(padding: const EdgeInsets.all(12), children: [
             _unread(context),
+            _checkIn(context),
+            _queue(context),
             Panel(
               title: context.l.identity,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -182,7 +182,14 @@ class MessagingService {
     final s = MessagingService._(session, router, keys, router.transports);
     s.ownPhone = await db.setting(ownPhoneKey);
     s.panic = PanicConfig.decode(await db.setting(_panicKey));
+    s.checkIn = CheckInConfig.decode(await db.setting(_checkInKey));
+    final due = int.tryParse(await db.setting(_checkInDueKey) ?? '');
+    final fired = int.tryParse(await db.setting(_checkInFiredKey) ?? '');
+    s.checkInDue.value = due == null ? null : DateTime.fromMillisecondsSinceEpoch(due);
+    s.checkInFired.value = fired == null ? null : DateTime.fromMillisecondsSinceEpoch(fired);
     s.lock = LockConfig.decode(await db.setting(_lockKey));
+    final keep = int.tryParse(await db.setting(_keepKey) ?? '');
+    s.keepFor = keep == null || keep <= 0 ? null : Duration(minutes: keep);
     final order = (await db.setting(_paceOrderKey))?.split(',');
     if (order != null && order.length == PaceLayer.values.length) {
       try {
@@ -259,6 +266,138 @@ class MessagingService {
   Future<void> _tick() async {
     await router.tick(DateTime.now());
     await _persistReplay();
+    _updateQueue();
+    await _vanish();
+    await checkInTick();
+  }
+
+  // --- check-in (settings: CheckInConfig) ---
+
+  static const _checkInKey = 'checkin', _checkInDueKey = 'checkin.due', _checkInFiredKey = 'checkin.fired';
+
+  CheckInConfig checkIn = const CheckInConfig();
+
+  /// When the check-in goes out unless confirmed; null while off or after it went.
+  final ValueNotifier<DateTime?> checkInDue = ValueNotifier(null);
+
+  /// When it went out (not confirmed in time); null otherwise.
+  final ValueNotifier<DateTime?> checkInFired = ValueNotifier(null);
+
+  /// Where the phone is, for the check-in (set by the app shell).
+  Future<Position?> Function()? locate;
+
+  /// The reminder before the check-in goes out (the shell shows a notification).
+  VoidCallback? onCheckInSoon;
+  bool _reminded = false;
+
+  Future<void> setCheckIn(CheckInConfig c) async {
+    checkIn = c;
+    await _db.setSetting(_checkInKey, c.encode());
+    if (c.enabled) {
+      await checkedIn(sendOk: false);
+    } else {
+      await _setDue(null);
+      await _setFired(null);
+    }
+  }
+
+  /// The owner is fine: the next check-in is [CheckInConfig.every] from now. After one went
+  /// out, [sendOk] tells the same recipients "OK".
+  Future<void> checkedIn({bool sendOk = true}) async {
+    if (!checkIn.enabled) return;
+    if (checkInFired.value != null && sendOk) {
+      await sendPanic(status: StatusCode.ok, position: checkIn.position ? await locate?.call() : null);
+    }
+    await _setFired(null);
+    await _setDue(DateTime.now().add(checkIn.every));
+  }
+
+  Future<void> _setDue(DateTime? t) async {
+    _reminded = false;
+    checkInDue.value = t;
+    await _db.setSetting(_checkInDueKey, t == null ? null : '${t.millisecondsSinceEpoch}');
+  }
+
+  Future<void> _setFired(DateTime? t) async {
+    checkInFired.value = t;
+    await _db.setSetting(_checkInFiredKey, t == null ? null : '${t.millisecondsSinceEpoch}');
+  }
+
+  bool _checkingIn = false;
+
+  /// Every few seconds (the ticker): the reminder, then the check-in when it is due.
+  @visibleForTesting
+  Future<void> checkInTick() async {
+    final due = checkInDue.value;
+    if (!checkIn.enabled || due == null || _checkingIn) return;
+    final now = DateTime.now();
+    if (!_reminded && now.isAfter(due.subtract(CheckInConfig.remindBefore))) {
+      _reminded = true;
+      onCheckInSoon?.call();
+    }
+    if (now.isBefore(due)) return;
+    _checkingIn = true;
+    try {
+      await _setDue(null);
+      await _setFired(now);
+      await sendPanic(status: checkIn.status, position: checkIn.position ? await locate?.call() : null);
+    } finally {
+      _checkingIn = false;
+    }
+  }
+
+  // --- disappearing messages (settings) ---
+
+  static const _keepKey = 'messages.keep';
+
+  /// Choices in the settings; null: keep everything.
+  static const keepChoices = <Duration?>[null, Duration(hours: 1), Duration(hours: 8), Duration(days: 1), Duration(days: 7)];
+
+  /// Messages older than this go, in every chat, on this phone only; null: kept.
+  Duration? keepFor;
+  DateTime? _vanishedAt;
+
+  Future<void> setKeepFor(Duration? d) async {
+    keepFor = d;
+    await _db.setSetting(_keepKey, d == null ? null : '${d.inMinutes}');
+    _vanishedAt = null;
+    await _vanish();
+  }
+
+  /// At most once a minute: drops what is older than [keepFor].
+  Future<void> _vanish() async {
+    final keep = keepFor;
+    final now = DateTime.now();
+    if (keep == null || (_vanishedAt != null && now.difference(_vanishedAt!) < const Duration(minutes: 1))) return;
+    _vanishedAt = now;
+    await (_db.delete(_db.messages)..where((t) => t.at.isSmallerThanValue(now.subtract(keep)))).go();
+  }
+
+  // --- outgoing queue (home screen) ---
+
+  /// Pair messages (and voice/file parts) in flight: sent and waiting for the ACK, by
+  /// channel; waiting for any channel; waiting for the user's OK to use SMS.
+  final ValueNotifier<({int sending, Map<String, int> via, int waiting, int confirm})> queue =
+      ValueNotifier((sending: 0, via: const {}, waiting: 0, confirm: 0));
+
+  void _updateQueue() {
+    var sending = 0, waiting = 0, confirm = 0;
+    final via = <String, int>{};
+    for (final e in router.outbox) {
+      switch (e.state) {
+        case OutboxState.sending:
+          sending++;
+          if (e.tried.isNotEmpty) via[e.tried.last] = (via[e.tried.last] ?? 0) + 1;
+        case OutboxState.waiting:
+          waiting++;
+        case OutboxState.awaitingConfirmation:
+          confirm++;
+      }
+    }
+    final q = queue.value;
+    if (q.sending != sending || q.waiting != waiting || q.confirm != confirm || !mapEquals(q.via, via)) {
+      queue.value = (sending: sending, via: via, waiting: waiting, confirm: confirm);
+    }
   }
 
   Future<void> _persistReplay() async {
@@ -652,24 +791,28 @@ class MessagingService {
   /// the own text, to every contact and team [panic] names. Emergency mode: every channel at
   /// once, SMS without asking. Returns the contact message ids and how many contacts and
   /// teams it went to.
-  Future<({List<String> ids, int contacts, int teams})> sendPanic({bool compromised = false, Position? position}) async {
+  /// [repeat]: a later round of a repeating PANIC — the status with the new position only.
+  /// [status]: another status to the same recipients (the check-in), without the text.
+  Future<({List<String> ids, int contacts, int teams})> sendPanic(
+      {bool compromised = false, bool repeat = false, StatusCode? status, Position? position}) async {
     final c = panic;
-    final status =
-        StatusReport(compromised ? StatusCode.compromised : c.status, c.position ? position : null).encode();
-    final text = compromised || c.text.trim().isEmpty ? null : encodeText(c.text.trim());
+    final report = StatusReport(
+            compromised ? StatusCode.compromised : status ?? c.status, c.position || status != null ? position : null)
+        .encode();
+    final text = compromised || repeat || status != null || c.text.trim().isEmpty ? null : encodeText(c.text.trim());
     final ids = <String>[];
     var contacts = 0;
     if (c.contacts) {
       for (final k in await _db.select(_db.contacts).get()) {
         contacts++;
-        ids.add(await sendPayload(k.id, MessageType.report, status, emergency: true));
+        ids.add(await sendPayload(k.id, MessageType.report, report, emergency: true));
         if (text != null) ids.add(await sendPayload(k.id, MessageType.text, text, emergency: true));
       }
     }
     var teams = 0;
     if (c.teams) {
       for (final t in await _db.select(_db.teams).get()) {
-        await sendTeamPayload(t.id, MessageType.report, status);
+        await sendTeamPayload(t.id, MessageType.report, report);
         if (text != null) await sendTeamPayload(t.id, MessageType.text, text);
         teams++;
       }

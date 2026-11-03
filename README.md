@@ -16,8 +16,17 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The current test build **L0ck-ECP_v0.2.3.apk** is under [Releases](../../releases)
-(Android 8.0+, arm64), with its SHA-256 checksum.
+The current test build **L0ck-ECP_v0.3.0.apk** is under [Releases](../../releases)
+(Android 8.0+, arm64), with its SHA-256 checksum. From 0.3.0 the APK is signed with the
+project's own key; its certificate's SHA-256 fingerprint (check with
+`apksigner verify --print-certs`) is:
+
+```
+7A:19:E3:4B:A8:0B:DC:19:14:8F:B7:21:47:01:B5:79:D9:67:A0:DB:0B:21:8C:71:F8:7D:9B:F4:FE:17:A4:F0
+```
+
+Test builds up to 0.2.3 used a development key: uninstall them before installing 0.3.0
+(the profile on that phone is lost; a group bundle from the base sets it up again).
 
 ### One message, several paths (PACE)
 
@@ -65,7 +74,13 @@ its time, delivery and read state. Public MeshCore channels are ignored.
 - **PANIC and COMPROMISED** on the PIN screen, without the PIN, while the app runs: PANIC
   sends the configured status, position and text to contacts and teams over every channel
   at once; COMPROMISED (with a confirmation elsewhere on the screen) reports "compromised"
-  and destroys the profile the way the duress code does.
+  and destroys the profile the way the duress code does. PANIC can repeat the position
+  every 5–30 min until the PIN is typed.
+- **Check-in (dead man's switch):** unless you confirm within 1–24 h (a button, or
+  unlocking with the PIN), the chosen status with your position goes to the PANIC
+  recipients; a reminder comes 15 min before.
+- **Disappearing messages** (older than 1 h – 7 days, on this phone) and an **outgoing
+  queue** on the home screen (what still waits, and on which channel).
 - **Security:** end-to-end encryption, encrypted storage (SQLCipher) protected by a PIN
   (Argon2id, key bound to the device), duress code, screen protection, notifications
   without content, emergency lock by four quick taps. Locking at once, after a delay or
@@ -93,6 +108,7 @@ or official rescue services.
 | `tools/ecp_base/` | offline base page for group setup (open `index.html` in a browser) |
 | `tools/` | laptop test nodes (`ecp_peer`, `bramble-peer`) |
 | `docs/ARCHITECTURE_V2.md` | design, message formats, implementation status, open questions (Czech) |
+| `docs/RELEASE.md` | signing key, build tools, F-Droid notes (Czech) |
 
 ### Building
 
@@ -158,8 +174,17 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Aktuální testovací sestavení **L0ck-ECP_v0.2.3.apk** je v [Releases](../../releases)
-(Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání.
+Aktuální testovací sestavení **L0ck-ECP_v0.3.0.apk** je v [Releases](../../releases)
+(Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání. Od verze 0.3.0 je APK
+podepsané vlastním klíčem projektu; otisk certifikátu SHA-256 (ověření:
+`apksigner verify --print-certs`):
+
+```
+7A:19:E3:4B:A8:0B:DC:19:14:8F:B7:21:47:01:B5:79:D9:67:A0:DB:0B:21:8C:71:F8:7D:9B:F4:FE:17:A4:F0
+```
+
+Testovací verze do 0.2.3 měly vývojový klíč: před instalací 0.3.0 je odinstaluj (profil
+v telefonu zanikne; balíček skupiny ze základny ho rychle nastaví znovu).
 
 ### Jedna zpráva, víc cest (PACE)
 
@@ -201,10 +226,16 @@ Veřejné kanály MeshCore aplikace ignoruje.
   skenování na telefon místo skenování každý s každým. Viz
   [tools/ecp_base/README.md](tools/ecp_base/README.md); také jako `L0ck-ECP-Base.zip`
   v Releases.
-- **PANIC a KOMPROMITOVÁN** na obrazovce PINu, bez PINu, dokud aplikace běží: PANIC pošle
+- **PANIC a KOMPROMITOVÁN** na obrazovce PINu, bez PINu, dokud aplikace běží (PANIC může
+  opakovat polohu každých 5–30 min, dokud se nezadá PIN): PANIC pošle
   nastavený stav, polohu a text kontaktům a týmům všemi kanály najednou; KOMPROMITOVÁN
   (s potvrzením na jiném místě obrazovky) ohlásí kompromitaci a zničí profil jako duress
   kód.
+- **Kontrolní hlášení (dead man's switch):** když do 1–24 h nepotvrdíš, že jsi v pořádku
+  (tlačítko nebo odemknutí PINem), odejde zvolený stav s polohou příjemcům PANIC;
+  15 min předem připomínka.
+- **Mizející zprávy** (starší než 1 h – 7 dní, v tomto telefonu) a **odchozí fronta** na
+  úvodní obrazovce (co ještě čeká a kterým kanálem).
 - **Bezpečnost:** šifrování end-to-end, šifrované úložiště (SQLCipher) chráněné PINem
   (Argon2id, klíč vázaný na zařízení), nouzový (duress) kód, ochrana obrazovky, oznámení
   bez obsahu, nouzové uzamčení čtyřmi rychlými klepnutími. Zamykání ihned, po zvolené
@@ -232,6 +263,7 @@ složky.
 | `tools/ecp_base/` | offline stránka základny pro hromadné nastavení (`index.html` v prohlížeči) |
 | `tools/` | testovací uzly pro laptop (`ecp_peer`, `bramble-peer`) |
 | `docs/ARCHITECTURE_V2.md` | návrh, formáty zpráv, stav implementace, otevřené otázky |
+| `docs/RELEASE.md` | podpisový klíč, nástroje sestavení, poznámky k F-Droid |
 
 ### Sestavení
 

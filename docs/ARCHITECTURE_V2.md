@@ -420,6 +420,17 @@ Balíček nese klíče všech týmů, proto jen osobně na základně; stránka 
 `connect-src 'none'`. Shodu formátu hlídá test: `tools/ecp_base/test/bundle_test.js` píše
 fixture, kterou dekóduje `group_bundle_test.dart`.
 
+**0.3.0:** podpis vlastním klíčem (docs/RELEASE.md). *Kontrolní hlášení*
+(`CheckInConfig`, Nastavení → Bezpečnost): když majitel do zvolené doby (1–24 h) nepotvrdí
+tlačítkem *Jsem v pořádku* na úvodní obrazovce nebo odemknutím PINem, odejde zvolený stav
+s polohou příjemcům PANIC (nouzový režim, všemi kanály); 15 min předem připomínka; po
+odeslání potvrzení pošle „V pořádku“. Termín je v šifrované databázi, hlídá ho ticker
+služby zpráv (jen dokud profil běží). *PANIC s opakováním*: stav s čerstvou polohou znovu
+každých 5–30 min, dokud se nezadá PIN (otisk prstu ho nezastaví). *Mizející zprávy*: zprávy
+starší než 1 h – 7 dní se mažou ve všech chatech, jen v tomto telefonu. *Odchozí fronta*
+na úvodní obrazovce: kolik zpráv a dílů čeká na potvrzení (a kterým kanálem), na kanál,
+nebo na souhlas s SMS.
+
 **0.2.3:** SRAZ už není samostatné hlášení v nabídce; STATUS nese volitelně bod srazu
 a čas (`status · [poloha 13 B] · [bod 13 B · čas u32]`, rozlišené délkou, takže starší
 STATUS i přijaté SRAZ se čtou dál). Chat kontaktu (ⓘ) i týmu (⋮) jde vymazat jen v tomto

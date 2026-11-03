@@ -274,6 +274,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _LockPanel(messaging: m, onChanged: changed),
             _PanicPanel(messaging: m, onChanged: changed),
+            _CheckInPanel(messaging: m),
+            Panel(
+              title: l.vanishTitle,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                DropdownButtonFormField<int>(
+                  key: const Key('vanish'),
+                  initialValue: m.keepFor?.inMinutes ?? 0,
+                  dropdownColor: L0ckColors.panel,
+                  decoration: InputDecoration(labelText: l.vanishAfter),
+                  items: [
+                    for (final d in MessagingService.keepChoices)
+                      DropdownMenuItem(
+                        value: d?.inMinutes ?? 0,
+                        child: Text(d == null
+                            ? l.vanishOff
+                            : d.inHours < 24
+                                ? l.vanishHours(d.inHours)
+                                : l.vanishDays(d.inDays)),
+                      ),
+                  ],
+                  onChanged: (v) => m.setKeepFor(v == null || v == 0 ? null : Duration(minutes: v)),
+                ),
+                const SizedBox(height: 6),
+                Text(l.vanishHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+              ]),
+            ),
           ]),
           _group('net', Icons.cell_tower, l.secConnectivity, l.secConnectivitySub, [
             Panel(
@@ -574,6 +600,17 @@ class _PanicPanelState extends State<_PanicPanel> {
           },
         ),
         _switch(l.attachPosition, _c.position, (v) => _save(_c.copyWith(position: v))),
+        DropdownButtonFormField<int>(
+          key: const Key('panic-repeat'),
+          initialValue: _c.repeatMinutes,
+          dropdownColor: L0ckColors.panel,
+          decoration: InputDecoration(labelText: l.panicRepeat),
+          items: [
+            for (final n in PanicConfig.repeatChoices)
+              DropdownMenuItem(value: n, child: Text(n == 0 ? l.panicRepeatOff : l.panicRepeatEvery(n))),
+          ],
+          onChanged: (v) => _save(_c.copyWith(repeatMinutes: v ?? 0)),
+        ),
         _switch(l.panicToContacts, _c.contacts, (v) => _save(_c.copyWith(contacts: v))),
         _switch(l.panicToTeams, _c.teams, (v) => _save(_c.copyWith(teams: v))),
         const Divider(color: L0ckColors.border),
@@ -581,6 +618,69 @@ class _PanicPanelState extends State<_PanicPanel> {
             held ? null : (v) => _save(_c.copyWith(compromiseButton: v)),
             note: held ? l.bioLocksPanic : null),
         Text(l.compromiseHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+      ]),
+    );
+  }
+}
+
+/// The check-in: on/off, how often, which status. Saved as soon as something changes.
+class _CheckInPanel extends StatefulWidget {
+  const _CheckInPanel({required this.messaging});
+  final MessagingService messaging;
+
+  @override
+  State<_CheckInPanel> createState() => _CheckInPanelState();
+}
+
+class _CheckInPanelState extends State<_CheckInPanel> {
+  CheckInConfig get _c => widget.messaging.checkIn;
+
+  Future<void> _save(CheckInConfig c) async {
+    await widget.messaging.setCheckIn(c);
+    if (mounted) setState(() {});
+  }
+
+  String _every(AppLocalizations l, int m) => m < 1440 ? l.vanishHours(m ~/ 60) : l.vanishDays(m ~/ 1440);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    return Panel(
+      title: l.checkInTitle,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(l.checkInHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+        SwitchListTile(
+          key: const Key('check-in-switch'),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(l.checkInOn, style: const TextStyle(color: L0ckColors.text)),
+          value: _c.enabled,
+          onChanged: (v) => _save(_c.copyWith(enabled: v)),
+        ),
+        DropdownButtonFormField<int>(
+          initialValue: _c.minutes,
+          dropdownColor: L0ckColors.panel,
+          decoration: InputDecoration(labelText: l.checkInEvery),
+          items: [for (final m in CheckInConfig.choices) DropdownMenuItem(value: m, child: Text(_every(l, m)))],
+          onChanged: (v) => _save(_c.copyWith(minutes: v)),
+        ),
+        DropdownButtonFormField<StatusCode>(
+          initialValue: _c.status,
+          dropdownColor: L0ckColors.panel,
+          decoration: InputDecoration(labelText: l.checkInStatus),
+          items: [
+            for (final st in StatusCode.values)
+              if (st != StatusCode.ok) DropdownMenuItem(value: st, child: Text(statusLabel(st))),
+          ],
+          onChanged: (v) => _save(_c.copyWith(status: v)),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(l.attachPosition, style: const TextStyle(color: L0ckColors.text)),
+          value: _c.position,
+          onChanged: (v) => _save(_c.copyWith(position: v)),
+        ),
       ]),
     );
   }

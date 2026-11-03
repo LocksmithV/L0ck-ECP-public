@@ -27,6 +27,8 @@ public final class NotifyHost {
 	private static final int ID = 2;
 	private static final String CALLS = "ecp_calls";
 	private static final int CALL_ID = 3;
+	private static final String REMINDERS = "ecp_reminders";
+	private static final int REMINDER_ID = 4;
 	public static final String EXTRA_OPEN = "cz.l0ck.ecp.OPEN";
 
 	private final Application app;
@@ -48,6 +50,10 @@ public final class NotifyHost {
 					break;
 				case "call":
 					ring(call.argument("text"), call.argument("open"));
+					result.success(null);
+					break;
+				case "reminder":
+					remind(call.argument("text"));
 					result.success(null);
 					break;
 				case "callEnd":
@@ -88,6 +94,25 @@ public final class NotifyHost {
 				.build();
 		n.flags |= Notification.FLAG_INSISTENT; // the ringtone repeats until cancelled
 		nm.notify(CALL_ID, n);
+	}
+
+	/** A reminder from the app itself (the check-in is due soon). */
+	private void remind(String text) {
+		if (Build.VERSION.SDK_INT >= 33
+				&& app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+				!= PackageManager.PERMISSION_GRANTED) return;
+		NotificationManager nm = app.getSystemService(NotificationManager.class);
+		NotificationChannel ch = new NotificationChannel(REMINDERS, "Připomínky", NotificationManager.IMPORTANCE_HIGH);
+		nm.createNotificationChannel(ch);
+		Intent intent = app.getPackageManager().getLaunchIntentForPackage(app.getPackageName());
+		PendingIntent pi = PendingIntent.getActivity(app, 2, intent,
+				PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+		nm.notify(REMINDER_ID, new Notification.Builder(app, REMINDERS)
+				.setSmallIcon(R.mipmap.ic_launcher_monochrome)
+				.setContentTitle(text)
+				.setContentIntent(pi)
+				.setAutoCancel(true)
+				.build());
 	}
 
 	/** [open] = conversation to show after unlock ("c:<contact id>" / "t:<team id>"); it

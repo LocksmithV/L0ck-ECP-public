@@ -1648,4 +1648,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rallyPlace => 'Rally point';
+
+  @override
+  String get queueTitle => 'Outgoing queue';
+
+  @override
+  String queueSending(int n, String via) {
+    return 'Sent, waiting for confirmation: $n ($via)';
+  }
+
+  @override
+  String queueWaiting(int n) {
+    return 'Waiting for a channel: $n';
+  }
+
+  @override
+  String queueConfirm(int n) {
+    return 'Waiting for your OK to use SMS: $n';
+  }
+
+  @override
+  String get vanishTitle => 'Disappearing messages';
+
+  @override
+  String get vanishAfter => 'Delete messages older than';
+
+  @override
+  String get vanishOff => 'Keep them';
+
+  @override
+  String vanishHours(int n) {
+    return '$n h';
+  }
+
+  @override
+  String vanishDays(int n) {
+    return '$n days';
+  }
+
+  @override
+  String get vanishHelp =>
+      'Deletes messages, reports, voice messages, attachments and call records in every chat, on this phone only. Contacts and teams set their own.';
+
+  @override
+  String get panicRepeat => 'Repeat the position until the PIN is typed';
+
+  @override
+  String get panicRepeatOff => 'Do not repeat';
+
+  @override
+  String panicRepeatEvery(int n) {
+    return 'Every $n min';
+  }
+
+  @override
+  String panicRepeating(int n) {
+    return 'The position goes out every $n min. The PIN stops it.';
+  }
+
+  @override
+  String get checkInTitle => 'Check-in';
+
+  @override
+  String get checkInOn => 'Turn the check-in on';
+
+  @override
+  String get checkInEvery => 'Confirm at least every';
+
+  @override
+  String get checkInHelp =>
+      'If you do not confirm you are fine in time (the button on the home screen, or unlocking with the PIN), the app sends the chosen status with the position to the same recipients as PANIC. It reminds you 15 minutes before. Works while the profile runs (not after a phone restart before the PIN).';
+
+  @override
+  String get checkInStatus => 'Status to send';
+
+  @override
+  String checkInDue(String time) {
+    return 'Check-in: confirm by $time';
+  }
+
+  @override
+  String checkInSent(String time) {
+    return 'The check-in went out at $time. Confirming sends \"OK\".';
+  }
+
+  @override
+  String get checkInOk => 'I AM FINE';
+
+  @override
+  String get checkInSoon => 'Check-in in 15 min – confirm in the app';
+
+  @override
+  String checkInConfirmed(String time) {
+    return 'Confirmed. Next by $time.';
+  }
 }

@@ -18,4 +18,7 @@ abstract final class Notifications {
   static Future<void> call(String text, {String? open}) => _m.invokeMethod('call', {'text': text, 'open': open});
 
   static Future<void> callEnd() => _m.invokeMethod('callEnd');
+
+  /// A reminder from the app (the check-in is due soon).
+  static Future<void> reminder(String text) => _m.invokeMethod('reminder', {'text': text});
 }

@@ -275,6 +275,20 @@ void main() {
       expect(await adb.select(adb.contacts).get(), hasLength(1));
     });
 
+    test('disappearing messages: older ones go, newer stay, the choice persists', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      final adb = alice.session.db;
+      await alice.sendText(a.contact.id, 'staré');
+      await (adb.update(adb.messages)).write(MessagesCompanion(at: Value(DateTime.now().subtract(const Duration(hours: 2)))));
+      await alice.sendText(a.contact.id, 'nové');
+      await alice.setKeepFor(const Duration(hours: 1));
+      final left = await adb.select(adb.messages).get();
+      expect(left.map((m) => decodeText(m.payload)), ['nové']);
+      final again = await MessagingService.start(alice.session);
+      expect(again.keepFor, const Duration(hours: 1));
+      await again.dispose();
+    });
+
     test('deleting a contact removes its conversation and keys', () async {
       final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
       await alice.sendText(a.contact.id, 'x');
@@ -306,6 +320,48 @@ void main() {
       await alice.awaitDelivery(r.ids, const Duration(seconds: 2));
       expect((await adb.select(adb.messages).get()).map((m) => m.status).toSet(), {'delivered'});
       expect(a.contact.id, isNotNull);
+    });
+
+    test('a repeated PANIC carries the status with the new position, not the text again', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await bob.addContactFromUri(alice.myContactUri());
+      await alice.setPanic(const PanicConfig(text: 'most u řeky', repeatMinutes: 5, teams: false));
+      final r = await alice.sendPanic(repeat: true, position: const Position(lat: 50.1, lon: 14.4));
+      expect(r.ids, hasLength(1));
+      final bdb = bob.session.db;
+      await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+      final got = (await bdb.select(bdb.messages).get()).single;
+      expect((Report.decode(got.payload) as StatusReport).position!.lat, closeTo(50.1, 1e-6));
+      expect(a.contact.id, isNotNull);
+    });
+
+    test('check-in: confirmed in time nothing goes; missed, the status goes; OK after it', () async {
+      await alice.addContactFromUri(bob.myContactUri());
+      await bob.addContactFromUri(alice.myContactUri());
+      var reminded = 0;
+      alice.onCheckInSoon = () => reminded++;
+      await alice.setCheckIn(const CheckInConfig(enabled: true, minutes: 60, status: StatusCode.injured, position: false));
+      final due = alice.checkInDue.value!;
+      expect(due.difference(DateTime.now()).inMinutes, inInclusiveRange(59, 60));
+      await alice.checkInTick();
+      expect(reminded, 0);
+      final bdb = bob.session.db;
+      expect(await bdb.select(bdb.messages).get(), isEmpty);
+
+      alice.checkInDue.value = DateTime.now().subtract(const Duration(seconds: 1)); // time is up
+      await alice.checkInTick();
+      expect((reminded, alice.checkInDue.value, alice.checkInFired.value != null), (1, null, true));
+      await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+      expect((Report.decode((await bdb.select(bdb.messages).get()).single.payload) as StatusReport).status,
+          StatusCode.injured);
+
+      await alice.checkedIn(); // "I am fine": everyone hears OK, the next one is armed
+      await until(() async => (await bdb.select(bdb.messages).get()).length == 2);
+      expect(alice.checkInFired.value, isNull);
+      expect(alice.checkInDue.value, isNotNull);
+      final again = await MessagingService.start(alice.session);
+      expect((again.checkIn.enabled, again.checkIn.status, again.checkInDue.value != null), (true, StatusCode.injured, true));
+      await again.dispose();
     });
 
     test('PANIC with only SMS left goes out at once; a normal message waits for approval', () async {
@@ -365,8 +421,9 @@ void main() {
     expect(PanicConfig.decode('{').button, isTrue);
     final c = PanicConfig.decode('{"status":3,"teams":false,"text":7}');
     expect((c.status, c.teams, c.text, c.contacts), (StatusCode.injured, false, '', true));
-    final back = PanicConfig.decode(const PanicConfig(compromiseButton: false, text: 'x').encode());
-    expect((back.compromiseButton, back.text), (false, 'x'));
+    final back = PanicConfig.decode(const PanicConfig(compromiseButton: false, text: 'x', repeatMinutes: 10).encode());
+    expect((back.compromiseButton, back.text, back.repeatMinutes), (false, 'x', 10));
+    expect(PanicConfig.decode('{"repeat":"x"}').repeatMinutes, 0);
   });
 
   test('lock settings: defaults, persisted, and only by hand keeps the four taps', () async {

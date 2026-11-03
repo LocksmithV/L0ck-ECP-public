@@ -257,6 +257,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _session = null;
     _messaging = null;
     _calls = null;
+    _panicRepeat?.cancel();
     CallService.instance = null;
     await calls?.dispose(); // a running call ends with the profile
     await m?.dispose(); // flushes replay memory before the database closes
@@ -270,6 +271,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final m = await MessagingService.start(s);
     if (!mounted) return;
     _calls = _startCalls(m);
+    m.locate = () => _panicPosition(m, always: true);
+    m.onCheckInSoon = () => Notifications.reminder(Lang.tr.checkInSoon).ignore();
+    _present(m);
     m.onUnseen = (n, open) => Notifications.message(n, open: open).ignore();
     setState(() {
       _session = s;
@@ -362,8 +366,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   /// The position for a PANIC, if the settings want one: a fresh fix, else the last known
   /// one — the status must not wait long for it.
-  Future<Position?> _panicPosition(MessagingService m) async {
-    if (!m.panic.position) return null;
+  Future<Position?> _panicPosition(MessagingService m, {bool always = false}) async {
+    if (!always && !m.panic.position) return null;
     try {
       return await Locator.current(timeout: const Duration(seconds: 6));
     } on Object {
@@ -375,8 +379,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final m = _messaging;
     if (m == null) return '';
     final r = await m.sendPanic(position: await _panicPosition(m));
-    return Lang.tr.panicSent(r.contacts, r.teams);
+    final every = m.panic.repeatMinutes;
+    if (every <= 0) return Lang.tr.panicSent(r.contacts, r.teams);
+    // Again and again with a fresh position, until the PIN (_pinUsed) or the profile closes
+    _panicRepeat?.cancel();
+    _panicRepeat = Timer.periodic(Duration(minutes: every), (_) async {
+      if (_messaging != m) return _panicRepeat?.cancel();
+      try {
+        await m.sendPanic(repeat: true, position: await _panicPosition(m));
+      } catch (_) {
+        // the next round tries again
+      }
+    });
+    return '${Lang.tr.panicSent(r.contacts, r.teams)}\n${Lang.tr.panicRepeating(every)}';
   }
+
+  Timer? _panicRepeat;
 
   /// Tells everyone "compromised", gives the channels a few seconds to hand it on, then
   /// destroys the running profile as the duress code would (SecurityService.destroyProfile).
@@ -395,7 +413,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
+  /// The owner typed the PIN: a pending check-in counts as confirmed (one that already went
+  /// out is answered only by the home screen button, which also tells everyone "OK").
+  void _present(MessagingService? m) {
+    if (m != null && m.checkIn.enabled && m.checkInFired.value == null) m.checkedIn(sendOk: false).ignore();
+  }
+
   void _pinUsed() {
+    _present(_messaging);
+    _panicRepeat?.cancel(); // the owner is back: PANIC stops repeating
+    _panicRepeat = null;
     _pinAt = DateTime.now();
     _biometricBlocked = false;
   }

@@ -1104,5 +1104,102 @@
   "clearChatText": "Smaže zprávy, hlášení, hlasové zprávy a přílohy tohoto chatu jen na tomto telefonu. Kontakt nebo tým zůstane.",
   "chatCleared": "Chat vymazán.",
   "statusWithRally": "Přidat SRAZ (místo a čas)",
-  "rallyPlace": "Místo srazu"
+  "rallyPlace": "Místo srazu",
+  "queueTitle": "Odchozí fronta",
+  "queueSending": "Odesílá se, čeká na potvrzení: {n} ({via})",
+  "@queueSending": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "via": {
+        "type": "String"
+      }
+    }
+  },
+  "queueWaiting": "Čeká na spojení: {n}",
+  "@queueWaiting": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "queueConfirm": "Čeká na tvůj souhlas s SMS: {n}",
+  "@queueConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vanishTitle": "Mizející zprávy",
+  "vanishAfter": "Mazat zprávy starší než",
+  "vanishOff": "Nemazat",
+  "vanishHours": "{n} h",
+  "@vanishHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vanishDays": "{n} dní",
+  "@vanishDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "vanishHelp": "Smaže zprávy, hlášení, hlasové zprávy, přílohy a záznamy hovorů ve všech chatech, jen v tomto telefonu. Kontakty a týmy si to nastavují samy.",
+  "panicRepeat": "Opakovat polohu, dokud se nezadá PIN",
+  "panicRepeatOff": "Neopakovat",
+  "panicRepeatEvery": "Každých {n} min",
+  "@panicRepeatEvery": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "panicRepeating": "Poloha se posílá každých {n} min. Zastaví to PIN.",
+  "@panicRepeating": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "checkInTitle": "Kontrolní hlášení",
+  "checkInOn": "Zapnout kontrolní hlášení",
+  "checkInEvery": "Potvrzovat nejpozději každých",
+  "checkInHelp": "Když do nastavené doby nepotvrdíš, že jsi v pořádku (tlačítko na úvodní obrazovce nebo odemknutí PINem), aplikace pošle zvolený stav s polohou stejným příjemcům jako PANIC. 15 minut předem připomene. Funguje, dokud profil běží (ne po restartu telefonu před zadáním PINu).",
+  "checkInStatus": "Stav, který se pošle",
+  "checkInDue": "Kontrolní hlášení: potvrď do {time}",
+  "@checkInDue": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInSent": "Kontrolní hlášení odešlo v {time}. Potvrzením se pošle „V pořádku“.",
+  "@checkInSent": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "checkInOk": "JSEM V POŘÁDKU",
+  "checkInSoon": "Kontrolní hlášení za 15 min – potvrď v aplikaci",
+  "checkInConfirmed": "Potvrzeno. Další do {time}.",
+  "@checkInConfirmed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }
