@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:ecp_core/ecp_core.dart';
@@ -10,11 +11,15 @@ import 'messaging/meshcore_app_transport.dart';
 import 'messaging/messaging_service.dart';
 import 'messaging/simplex_app_transport.dart';
 import 'messaging/sms_transport.dart';
+import 'platform/biometric.dart';
 import 'platform/bramble.dart';
 import 'platform/radio.dart';
 import 'platform/sms.dart';
 import 'platform/keystore.dart';
+import 'platform/location.dart';
+import 'platform/net.dart';
 import 'platform/notify.dart';
+import 'security/lock_config.dart';
 import 'security/native_kdf.dart';
 import 'security/security_service.dart';
 import 'ui/home_screen.dart';
@@ -71,12 +76,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   MessagingService? _messaging;
   _Stage _stage = _Stage.loading;
 
+  // Locking after a delay (settings), and when a fingerprint may stand in for the PIN
+  Timer? _autoLock;
+  DateTime? _pausedAt, _pinAt;
+  bool _biometricBlocked = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Net.watch();
+    Net.online.addListener(() => _messaging?.networkChanged());
     QuickLock.onTrigger = () {
-      if (_stage != _Stage.unlocked) return;
+      if (_stage != _Stage.unlocked || _messaging?.lock.quickLock == false) return;
+      _biometricBlocked = true; // locked in a hurry: the next unlock takes the PIN
       _lock();
       QuickLock.minimize().ignore();
     };
@@ -101,6 +114,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         await _bramble.stopUnless(keep);
         await _bramble.deleteProfilesExcept(keep);
         await _deleteSimplexExcept(keep);
+      },
+      onProfileDestroyed: (profile) async {
+        // KOMPROMITOVÁN: only this profile's node and data; the decoy's stay
+        await _bramble.stopUnless(null);
+        await _bramble.deleteProfile(profile);
+        final d = Directory('${(await _simplexRoot()).path}/$profile');
+        if (await d.exists()) await d.delete(recursive: true);
       },
     );
     final ready = await security.isSetUp();
@@ -127,7 +147,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused && _stage == _Stage.unlocked) _lock();
+    final m = _messaging;
+    if (_stage != _Stage.unlocked || m == null) return;
+    final after = m.lock.after; // null: only by hand
+    if (state == AppLifecycleState.paused) {
+      if (after == Duration.zero) return _lock();
+      m.inForeground = false; // still unlocked, but new messages are announced again
+      _pausedAt = DateTime.now();
+      _autoLock?.cancel();
+      if (after != null) _autoLock = Timer(after, _lock);
+    } else if (state == AppLifecycleState.resumed && _pausedAt != null) {
+      _autoLock?.cancel();
+      final away = DateTime.now().difference(_pausedAt!);
+      _pausedAt = null;
+      // The timer may not have run while the app was in the background
+      if (after != null && away >= after) return _lock();
+      _inView();
+    }
   }
 
   /// The user sees the unlocked app: no "new message" notification is due.
@@ -159,12 +195,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _autoLock?.cancel();
     _close();
     super.dispose();
   }
 
   /// Screen lock only; see the class comment.
   void _lock() {
+    _autoLock?.cancel();
+    _pausedAt = null;
     _messaging?.inForeground = false;
     // Contacts and conversations are pushed above the shell; none may show over the lock
     Navigator.of(context).popUntil((r) => r.isFirst);
@@ -181,6 +220,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _unlocked(Session s) async {
+    _pinUsed();
     // A different profile than the one running means duress just destroyed that one
     await _close();
     final m = await MessagingService.start(s);
@@ -273,6 +313,74 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
+  // --- PIN screen emergency buttons (the profile runs behind the PIN screen) ---
+
+  /// The position for a PANIC, if the settings want one: a fresh fix, else the last known
+  /// one — the status must not wait long for it.
+  Future<Position?> _panicPosition(MessagingService m) async {
+    if (!m.panic.position) return null;
+    try {
+      return await Locator.current(timeout: const Duration(seconds: 6));
+    } on Object {
+      return Locator.last.value;
+    }
+  }
+
+  Future<String> _panic() async {
+    final m = _messaging;
+    if (m == null) return '';
+    final r = await m.sendPanic(position: await _panicPosition(m));
+    return Lang.tr.panicSent(r.contacts, r.teams);
+  }
+
+  /// Tells everyone "compromised", gives the channels a few seconds to hand it on, then
+  /// destroys the running profile as the duress code would (SecurityService.destroyProfile).
+  Future<void> _compromise() async {
+    final m = _messaging, s = _session, security = _security;
+    if (m == null || s == null || security == null) return;
+    try {
+      final r = await m.sendPanic(compromised: true, position: await _panicPosition(m));
+      await Future<void>.delayed(const Duration(seconds: 3)); // team frames and relay uploads
+      await m.awaitDelivery(r.ids, const Duration(seconds: 7));
+    } catch (_) {
+      // Destroying must not depend on the warning getting out
+    }
+    await security.destroyProfile(s, close: _close);
+    Notifications.clear().ignore();
+    if (mounted) setState(() {});
+  }
+
+  void _pinUsed() {
+    _pinAt = DateTime.now();
+    _biometricBlocked = false;
+  }
+
+  void _resume() {
+    setState(() => _stage = _Stage.unlocked);
+    _inView();
+  }
+
+  /// A fingerprint opens the running profile only when the settings allow it, PANIC and
+  /// KOMPROMITOVÁN are on the PIN screen (a finger has no duress code), the last lock was not
+  /// the emergency one and the PIN was typed within [LockConfig.biometricFor].
+  bool get _biometricAllowed {
+    final m = _messaging, at = _pinAt;
+    return m != null &&
+        m.lock.biometric &&
+        m.panic.button &&
+        m.panic.compromiseButton &&
+        !_biometricBlocked &&
+        at != null &&
+        DateTime.now().difference(at) < LockConfig.biometricFor;
+  }
+
+  Future<void> _fingerprint() async {
+    final l = Lang.tr;
+    if (!_biometricAllowed || !await Biometric.authenticate(title: l.bioPrompt, cancel: l.bioUsePin)) return;
+    // Rechecked: the profile may have gone (KOMPROMITOVÁN) while the prompt was up
+    if (mounted && _stage == _Stage.locked && _biometricAllowed) _resume();
+  }
+
   Future<void> _wiped() async {
     await _close();
     setState(() => _stage = _Stage.setup);
@@ -296,13 +404,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           runningProfile: _session?.profileId,
           onUnlocked: _unlocked,
           onResumed: () {
-            setState(() => _stage = _Stage.unlocked);
-            _inView();
+            _pinUsed();
+            _resume();
           },
           onWiped: _wiped,
+          onPanic: _messaging?.panic.button == true ? _panic : null,
+          onCompromise: _messaging?.panic.compromiseButton == true ? _compromise : null,
+          onBiometric: _biometricAllowed ? _fingerprint : null,
         );
       case _Stage.unlocked:
-        return HomeScreen(messaging: _messaging!, security: security!, onLock: _lock);
+        return HomeScreen(messaging: _messaging!, security: security!);
     }
   }
 }

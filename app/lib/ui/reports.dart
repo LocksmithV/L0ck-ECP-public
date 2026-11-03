@@ -8,8 +8,15 @@ import '../l10n/lang.dart';
 import '../platform/location.dart';
 import 'theme.dart';
 
-/// Sends one message of [type] with [payload] to the open conversation (contact or team).
+/// Sends one message of [type] with [payload] to the open conversation (contact or team), or
+/// to recipients picked after the form (home screen).
 typedef SendPayload = Future<void> Function(int type, Uint8List payload);
+
+/// Thrown by a [SendPayload] when nothing was sent (no recipient picked): the form stays
+/// open with what was filled in.
+class SendCancelled implements Exception {
+  const SendCancelled();
+}
 
 // --- labels (docs/ARCHITECTURE_V2.md §4: the wire carries codes, the UI names them) ---
 
@@ -386,7 +393,11 @@ class _Form extends StatelessWidget {
           onPressed: onSend == null
               ? null
               : () async {
-                  await onSend!();
+                  try {
+                    await onSend!();
+                  } on SendCancelled {
+                    return;
+                  }
                   if (context.mounted) Navigator.of(context).pop();
                 },
         ),

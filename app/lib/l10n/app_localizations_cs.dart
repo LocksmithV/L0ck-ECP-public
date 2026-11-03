@@ -1206,4 +1206,161 @@ class AppLocalizationsCs extends AppLocalizations {
   String stLora(String s) {
     return 'LoRa: $s';
   }
+
+  @override
+  String get panicButton => 'PANIC';
+
+  @override
+  String get compromiseButton => 'KOMPROMITOVÁN';
+
+  @override
+  String get confirmCompromise =>
+      'POTVRDIT: KOMPROMITOVÁN\nodeslat a smazat profil';
+
+  @override
+  String get panicSending => 'Odesílám…';
+
+  @override
+  String get panicFailed => 'PANIC se nepodařilo odeslat.';
+
+  @override
+  String panicSent(int c, int t) {
+    return 'PANIC odeslán: $c kontaktům, $t týmům';
+  }
+
+  @override
+  String get panicTitle => 'PANIC A KOMPROMITOVÁN';
+
+  @override
+  String get panicHelp =>
+      'Tlačítka na obrazovce PINu fungují bez PINu, dokud aplikace běží za zámkem. PANIC odejde hned všemi kanály najednou, SMS bez potvrzení.';
+
+  @override
+  String get panicButtonOn => 'Tlačítko PANIC';
+
+  @override
+  String get panicStatus => 'Stav, který PANIC pošle';
+
+  @override
+  String get panicText => 'Vlastní zpráva (nepovinné)';
+
+  @override
+  String get panicToContacts => 'Všem kontaktům';
+
+  @override
+  String get panicToTeams => 'Všem týmům';
+
+  @override
+  String get compromiseOn => 'Tlačítko KOMPROMITOVÁN';
+
+  @override
+  String get compromiseHelp =>
+      'Pošle stejným příjemcům stav Kompromitován a pak zničí tento profil stejně jako duress kód. Potvrzuje se druhým tlačítkem nahoře na obrazovce. Duress kód pak otevře návnadu; bez duress kódu už aplikaci nic neotevře.';
+
+  @override
+  String get renameTeam => 'Přejmenovat tým';
+
+  @override
+  String get noInternet => 'bez internetu';
+
+  @override
+  String get secSecurity => 'Bezpečnost';
+
+  @override
+  String get secSecuritySub => 'PIN, duress kód, zamykání, otisk prstu, PANIC';
+
+  @override
+  String get secConnectivity => 'Konektivita';
+
+  @override
+  String get secConnectivitySub =>
+      'Číslo pro SMS, pořadí PACE, obnova spojení, rádio LoRa';
+
+  @override
+  String get secApp => 'Aplikace';
+
+  @override
+  String get secAppSub => 'Přezdívka, jazyk';
+
+  @override
+  String get pinCodes => 'PIN a duress kód';
+
+  @override
+  String get lockTitle => 'Zamykání';
+
+  @override
+  String get lockAfter => 'Zamknout po odchodu z aplikace';
+
+  @override
+  String get lockNow => 'Ihned';
+
+  @override
+  String lockMinutes(int n) {
+    return 'Po $n min';
+  }
+
+  @override
+  String get lockManual => 'Jen ručně (4 klepnutí)';
+
+  @override
+  String get lockHelp =>
+      'Po restartu telefonu nebo aplikace je PIN potřeba vždy.';
+
+  @override
+  String get quickLockNeeded => 'Při zamykání jen ručně musí zůstat zapnuté.';
+
+  @override
+  String get bioTitle => 'Odemknutí otiskem prstu';
+
+  @override
+  String bioHelp(int h) {
+    return 'Jen pro návrat do běžícího profilu. PIN je potřeba po restartu, po nouzovém zamknutí a $h h od posledního zadání PINu. Otisk nemá duress kód.';
+  }
+
+  @override
+  String get bioNeedsPanic =>
+      'Vyžaduje zapnuté tlačítko PANIC i KOMPROMITOVÁN.';
+
+  @override
+  String get bioUnavailable => 'Telefon nemá nastavený otisk prstu.';
+
+  @override
+  String get bioLocksPanic => 'Při odemykání otiskem musí zůstat zapnuté.';
+
+  @override
+  String get bioPrompt => 'Odemknout L0ck-ECP';
+
+  @override
+  String get bioUsePin => 'Použít PIN';
+
+  @override
+  String get bioButton => 'Otisk prstu';
+
+  @override
+  String get chConnected => 'PŘIPOJENO';
+
+  @override
+  String get chNoLink => 'BEZ SPOJENÍ';
+
+  @override
+  String get reportButton => 'Hlášení';
+
+  @override
+  String get sendTo => 'Komu poslat';
+
+  @override
+  String get selectAll => 'Vybrat vše';
+
+  @override
+  String sendToN(int n) {
+    return 'ODESLAT ($n)';
+  }
+
+  @override
+  String sentToN(int n) {
+    return 'Odesláno: $n příjemcům';
+  }
+
+  @override
+  String get noRecipients => 'Zatím nemáš žádné kontakty ani týmy.';
 }

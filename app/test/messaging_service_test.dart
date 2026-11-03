@@ -6,6 +6,8 @@ import 'package:ecp_core/ecp_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:l0ck_ecp/data/database.dart';
 import 'package:l0ck_ecp/messaging/messaging_service.dart';
+import 'package:l0ck_ecp/messaging/panic.dart';
+import 'package:l0ck_ecp/security/lock_config.dart';
 import 'package:l0ck_ecp/security/security_service.dart';
 import 'package:sqlite3/sqlite3.dart' as raw;
 
@@ -212,6 +214,63 @@ void main() {
       expect(alice.router.keys.pairs, isEmpty);
     });
 
+    test('PANIC: status with position, then the own text, as emergency; settings persist', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await bob.addContactFromUri(alice.myContactUri());
+      await alice.setPanic(const PanicConfig(status: StatusCode.injured, text: 'most u řeky', teams: false));
+      final again = await MessagingService.start(alice.session);
+      expect(again.panic.status, StatusCode.injured);
+      await again.dispose();
+      const p = Position(lat: 50.088, lon: 14.4208);
+      final r = await alice.sendPanic(position: p);
+      expect((r.contacts, r.teams, r.ids.length), (1, 0, 2));
+      final bdb = bob.session.db;
+      await until(() async => (await bdb.select(bdb.messages).get()).length == 2);
+      final got = await (bdb.select(bdb.messages)..orderBy([(t) => OrderingTerm(expression: t.at)])).get();
+      final status = Report.decode(got.first.payload) as StatusReport;
+      expect(status.status, StatusCode.injured);
+      expect(status.position!.lat, closeTo(50.088, 1e-6));
+      expect(decodeText(got.last.payload), 'most u řeky');
+      final adb = alice.session.db;
+      await alice.awaitDelivery(r.ids, const Duration(seconds: 2));
+      expect((await adb.select(adb.messages).get()).map((m) => m.status).toSet(), {'delivered'});
+      expect(a.contact.id, isNotNull);
+    });
+
+    test('PANIC with only SMS left goes out at once; a normal message waits for approval', () async {
+      final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+      await bob.addContactFromUri(alice.myContactUri());
+      final aSms = Loop('sms', PaceLayer.emergency), bSms = Loop('sms', PaceLayer.emergency);
+      aSms.peer = bSms;
+      bSms.peer = aSms;
+      aSms.owner = () => alice;
+      bSms.owner = () => bob;
+      await alice.addTransport(aSms);
+      await bob.addTransport(bSms);
+      aSide.up = false; // no SimpleX: only "SMS"
+      final adb = alice.session.db;
+      final normal = await alice.sendPayload(a.contact.id, MessageType.text, encodeText('běžná'));
+      expect((await (adb.select(adb.messages)..where((m) => m.id.equals(normal))).getSingle()).status, 'confirm');
+      await alice.setPanic(const PanicConfig(position: false, teams: false));
+      final r = await alice.sendPanic();
+      await alice.awaitDelivery(r.ids, const Duration(seconds: 2));
+      final row = await (adb.select(adb.messages)..where((m) => m.id.equals(r.ids.single))).getSingle();
+      expect((row.status, row.via), ('delivered', 'sms'));
+    });
+
+    test('KOMPROMITOVÁN reports "compromised" without the own text', () async {
+      await alice.addContactFromUri(bob.myContactUri());
+      await bob.addContactFromUri(alice.myContactUri());
+      await alice.setPanic(const PanicConfig(text: 'nemá jít', position: false));
+      final r = await alice.sendPanic(compromised: true, position: const Position(lat: 1, lon: 2));
+      expect(r.ids, hasLength(1));
+      final bdb = bob.session.db;
+      await until(() async => (await bdb.select(bdb.messages).get()).isNotEmpty);
+      final s = Report.decode((await bdb.select(bdb.messages).getSingle()).payload) as StatusReport;
+      expect(s.status, StatusCode.compromised);
+      expect(s.position, isNull, reason: 'position switched off in the settings');
+    });
+
     test('PACE order is kept across restarts', () async {
       final order = [PaceLayer.contingency, PaceLayer.primary, PaceLayer.alternate, PaceLayer.emergency];
       await alice.setPaceOrder(order);
@@ -228,6 +287,36 @@ void main() {
       await until(() async => (await adb.select(adb.messages).getSingle()).status == 'waiting');
       expect(await adb.select(adb.outboxRows).get(), hasLength(1));
     });
+  });
+
+  test('PANIC settings: damaged or partial values fall back to the defaults', () {
+    expect(PanicConfig.decode(null).status, StatusCode.needHelp);
+    expect(PanicConfig.decode('{').button, isTrue);
+    final c = PanicConfig.decode('{"status":3,"teams":false,"text":7}');
+    expect((c.status, c.teams, c.text, c.contacts), (StatusCode.injured, false, '', true));
+    final back = PanicConfig.decode(const PanicConfig(compromiseButton: false, text: 'x').encode());
+    expect((back.compromiseButton, back.text), (false, 'x'));
+  });
+
+  test('lock settings: defaults, persisted, and only by hand keeps the four taps', () async {
+    const d = LockConfig();
+    expect((d.after, d.quickLock, d.biometric), (Duration.zero, true, false));
+    expect(LockConfig.decode('{"after":"x"').after, Duration.zero);
+    final manual = const LockConfig(quickLock: false).withAfter(null);
+    expect((manual.after, manual.quickLock), (null, true));
+    expect(LockConfig.decode('{"after":-1,"quick":false}').quickLock, isTrue,
+        reason: 'a damaged or hand-made value must not lose the only way to lock');
+    final five = LockConfig.decode(manual.withAfter(const Duration(minutes: 5)).copyWith(biometric: true).encode());
+    expect((five.after, five.quickLock, five.biometric), (const Duration(minutes: 5), true, true));
+
+    final s = await session('Alfa');
+    final m = await MessagingService.start(s);
+    await m.setLock(LockConfig.decode('{"after":60,"quick":false,"bio":true}'));
+    await m.dispose();
+    final again = await MessagingService.start(s);
+    expect((again.lock.after, again.lock.quickLock, again.lock.biometric), (const Duration(minutes: 1), false, true));
+    await again.dispose();
+    await s.close();
   });
 
   test('a v1 profile database upgrades to v2 and keeps its data', () async {

@@ -329,10 +329,23 @@ class PaceRouter {
     }
   }
 
-  /// A channel came up or went down: waiting messages try again from the most secure layer.
+  /// A channel came up or went down: waiting messages try again from the most secure layer,
+  /// and a message waiting for an ACK on a layer that can no longer reach its contact (the
+  /// internet went, the Bluetooth link broke) moves on now instead of at the timeout. It may
+  /// still arrive the old way as well; the receiver drops the duplicate by id.
   Future<void> availabilityChanged(DateTime now) async {
     for (final e in _outbox.values.where((e) => e.state == OutboxState.waiting).toList()) {
       e.layerIndex = 0;
+      await _advance(e, now);
+    }
+    for (final e in _outbox.values
+        .where((e) => e.state == OutboxState.sending && !e.emergency)
+        .toList()) {
+      final layer = profile.order[e.layerIndex];
+      final reachable =
+          transports.any((t) => t.layer == layer && t.isAvailable && t.canReach(e.contactId));
+      if (reachable) continue;
+      e.layerIndex++;
       await _advance(e, now);
     }
   }

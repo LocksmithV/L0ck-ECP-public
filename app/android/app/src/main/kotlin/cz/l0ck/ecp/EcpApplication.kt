@@ -3,6 +3,7 @@ package cz.l0ck.ecp
 import android.app.Application
 import cz.l0ck.ecp.bramble.BrambleHost
 import cz.l0ck.ecp.location.LocationHost
+import cz.l0ck.ecp.net.NetHost
 import cz.l0ck.ecp.notify.NotifyHost
 import cz.l0ck.ecp.radio.RadioHost
 import cz.l0ck.ecp.sms.SmsHost
@@ -34,6 +35,7 @@ class EcpApplication : Application(), BrambleApplication {
         SmsHost.get(this).attach(messenger)
         NotifyHost(this).attach(messenger)
         LocationHost(this).attach(messenger)
+        NetHost(this).attach(messenger)
         engine.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint.createDefault())
         FlutterEngineCache.getInstance().put(ENGINE, engine)
     }

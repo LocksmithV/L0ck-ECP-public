@@ -16,13 +16,14 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The test build **L0ck-ECP_v1.apk** is under [Releases](../../releases) (Android 8.0+,
-arm64), with its SHA-256 checksum.
+The current test build **L0ck-ECP_v0.1.1.apk** is under [Releases](../../releases)
+(Android 8.0+, arm64), with its SHA-256 checksum.
 
 ### One message, several paths (PACE)
 
 Every message is one encrypted ECP envelope. The app sends it over the first path that
-works and, when no acknowledgement comes back, tries the next one by itself. The order
+works and, when no acknowledgement comes back, tries the next one by itself. Channels that
+cannot work right now (no internet, radio not connected) are skipped at once. The order
 can be changed in the settings.
 
 | Layer | Channel | When it helps |
@@ -45,10 +46,18 @@ its time, delivery and read state. Public MeshCore channels are ignored.
   9-line, SALTER (observation), 5W (who, what, where, when, why). Compact — each fits one
   LoRa packet and at most two SMS. GPS position without Google services; the receiver sees
   the coordinates, distance and bearing, and can open the point in an offline map
-  (OsmAnd, Organic Maps).
+  (OsmAnd, Organic Maps). A report can be sent from the home screen to a team and to
+  several contacts at once.
+- **PANIC and COMPROMISED** on the PIN screen, without the PIN, while the app runs: PANIC
+  sends the configured status, position and text to contacts and teams over every channel
+  at once; COMPROMISED (with a confirmation elsewhere on the screen) reports "compromised"
+  and destroys the profile the way the duress code does.
 - **Security:** end-to-end encryption, encrypted storage (SQLCipher) protected by a PIN
   (Argon2id, key bound to the device), duress code, screen protection, notifications
-  without content, emergency lock by four quick taps. No accounts, no sign-up.
+  without content, emergency lock by four quick taps. Locking at once, after a delay or
+  only by hand; optional fingerprint to return to the running profile (only with PANIC
+  and COMPROMISED on, PIN again after a restart, the emergency lock or 8 hours). No
+  accounts, no sign-up.
 - **Operation:** runs in the background and with the screen locked; per-channel reconnect
   in the settings; Czech and English.
 
@@ -131,13 +140,14 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Testovací sestavení **L0ck-ECP_v1.apk** je v [Releases](../../releases) (Android 8.0+,
-arm64). Kontrolní součet SHA-256 je u vydání.
+Aktuální testovací sestavení **L0ck-ECP_v0.1.1.apk** je v [Releases](../../releases)
+(Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání.
 
 ### Jedna zpráva, víc cest (PACE)
 
 Každá zpráva je jedna šifrovaná obálka ECP; aplikace ji pošle první cestou, která funguje,
-a když nepřijde potvrzení, sama zkusí další. Pořadí jde v nastavení změnit.
+a když nepřijde potvrzení, sama zkusí další. Kanály, které právě fungovat nemohou (bez
+internetu, rádio nepřipojené), přeskočí hned. Pořadí jde v nastavení změnit.
 
 | Vrstva | Kanál | Kdy pomůže |
 |---|---|---|
@@ -158,10 +168,18 @@ Veřejné kanály MeshCore aplikace ignoruje.
 - **Standardizovaná hlášení:** poloha, STATUS, SRAZ (místo a čas), SITREP, MEDEVAC 9-line,
   SALTER (pozorování), 5W (kdo, co, kde, kdy, proč). Kompaktní — vejdou se do jednoho LoRa
   paketu a nejvýš dvou SMS. Poloha z GPS bez služeb Google; příjemce vidí souřadnice,
-  vzdálenost a azimut a může bod otevřít v offline mapě (OsmAnd, Organic Maps).
+  vzdálenost a azimut a může bod otevřít v offline mapě (OsmAnd, Organic Maps). Hlášení
+  jde z úvodní obrazovky poslat týmu i více kontaktům najednou.
+- **PANIC a KOMPROMITOVÁN** na obrazovce PINu, bez PINu, dokud aplikace běží: PANIC pošle
+  nastavený stav, polohu a text kontaktům a týmům všemi kanály najednou; KOMPROMITOVÁN
+  (s potvrzením na jiném místě obrazovky) ohlásí kompromitaci a zničí profil jako duress
+  kód.
 - **Bezpečnost:** šifrování end-to-end, šifrované úložiště (SQLCipher) chráněné PINem
   (Argon2id, klíč vázaný na zařízení), nouzový (duress) kód, ochrana obrazovky, oznámení
-  bez obsahu, nouzové uzamčení čtyřmi rychlými klepnutími. Žádné účty ani registrace.
+  bez obsahu, nouzové uzamčení čtyřmi rychlými klepnutími. Zamykání ihned, po zvolené
+  době nebo jen ručně; volitelně otisk prstu pro návrat do běžícího profilu (jen se
+  zapnutým PANIC a KOMPROMITOVÁN, PIN znovu po restartu, nouzovém zamknutí a po 8 h).
+  Žádné účty ani registrace.
 - **Provoz:** běží na pozadí i se zamčenou obrazovkou; obnovení jednotlivých kanálů
   v nastavení; čeština a angličtina.
 

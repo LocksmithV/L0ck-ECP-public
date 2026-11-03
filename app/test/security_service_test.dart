@@ -23,6 +23,7 @@ void main() {
   }
 
   late List<String?> destroyed;
+  late List<String> destroyedOne;
 
   SecurityService service({AttemptPolicy policy = const AttemptPolicy()}) => SecurityService(
     dir,
@@ -32,6 +33,7 @@ void main() {
     policy: policy,
     runInIsolate: false,
     onProfilesDestroyed: (keep) async => destroyed.add(keep),
+    onProfileDestroyed: (p) async => destroyedOne.add(p),
   );
 
   List<File> dbFiles() => dir
@@ -44,6 +46,7 @@ void main() {
     dir = await Directory.systemTemp.createTemp('l0ck_ecp_test');
     hwKeyDeleted = false;
     destroyed = [];
+    destroyedOne = [];
   });
 
   tearDown(() => dir.delete(recursive: true));
@@ -76,6 +79,38 @@ void main() {
     // The decoy keeps working afterwards
     final again = (await s.unlock('115577')) as Unlocked;
     await again.session.close();
+  });
+
+  test('KOMPROMITOVÁN: the running profile goes like under duress, the decoy stays', () async {
+    final s = service();
+    await s.setup(pin: '482913', duressPin: '115577', nickname: 'Kos');
+    final real = (await s.unlock('482913')) as Unlocked;
+    var closed = false;
+    await s.destroyProfile(
+      real.session,
+      close: () async {
+        closed = true;
+        await real.session.close();
+      },
+    );
+    expect(closed, isTrue);
+    expect(dbFiles(), hasLength(1), reason: 'only the decoy database is left');
+    expect(destroyedOne, [real.session.brambleProfile], reason: "only the real profile's Bramble data");
+    expect(destroyed, isEmpty, reason: "the decoy's Bramble data is not touched");
+    expect(await s.unlock('482913'), isA<WrongCode>(), reason: 'real slot destroyed');
+    final decoy = (await s.unlock('115577')) as Unlocked;
+    expect(decoy.session.nickname, 'Kos');
+    await decoy.session.close();
+  });
+
+  test('KOMPROMITOVÁN without a duress code: nothing opens any more', () async {
+    final s = service();
+    await s.setup(pin: '482913', nickname: 'Kos');
+    final real = (await s.unlock('482913')) as Unlocked;
+    await s.destroyProfile(real.session, close: real.session.close);
+    expect(dbFiles(), isEmpty);
+    expect(await s.isSetUp(), isTrue, reason: 'the PIN screen stays as it was');
+    expect(await s.unlock('482913'), isA<WrongCode>());
   });
 
   test('locked in the background: own code resumes, duress switches and drops Bramble', () async {

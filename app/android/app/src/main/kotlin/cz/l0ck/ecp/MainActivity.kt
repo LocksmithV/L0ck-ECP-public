@@ -3,11 +3,14 @@ package cz.l0ck.ecp
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.biometrics.BiometricManager
+import android.hardware.biometrics.BiometricPrompt
 import com.google.zxing.integration.android.IntentIntegrator
 import cz.l0ck.ecp.notify.NotifyHost
 import com.journeyapps.barcodescanner.CaptureActivity
 import android.os.Build
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
@@ -99,6 +102,45 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
+        // Fingerprint instead of the PIN for the running profile (settings); strong biometrics
+        // only, Android 11+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BIOMETRIC)
+            .setMethodCallHandler { call, result ->
+                if (Build.VERSION.SDK_INT < 30) return@setMethodCallHandler result.success(false)
+                val strong = BiometricManager.Authenticators.BIOMETRIC_STRONG
+                when (call.method) {
+                    "available" -> result.success(
+                        getSystemService(BiometricManager::class.java)
+                            .canAuthenticate(strong) == BiometricManager.BIOMETRIC_SUCCESS)
+                    "authenticate" -> {
+                        var answered = false
+                        fun reply(ok: Boolean) {
+                            if (answered) return
+                            answered = true
+                            result.success(ok)
+                        }
+                        BiometricPrompt.Builder(this)
+                            .setTitle(call.argument<String>("title") ?: "")
+                            .setNegativeButton(call.argument<String>("cancel") ?: "", mainExecutor) { _, _ ->
+                                reply(false)
+                            }
+                            .setAllowedAuthenticators(strong)
+                            .setConfirmationRequired(false)
+                            .build()
+                            .authenticate(CancellationSignal(), mainExecutor,
+                                object : BiometricPrompt.AuthenticationCallback() {
+                                    override fun onAuthenticationSucceeded(r: BiometricPrompt.AuthenticationResult?) =
+                                        reply(true)
+
+                                    // Cancelled, too many tries, sensor gone: back to the PIN
+                                    override fun onAuthenticationError(code: Int, message: CharSequence?) =
+                                        reply(false)
+                                })
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
         // QR scanning needs this activity too (startActivityForResult)
         scanChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SCAN).apply {
             setMethodCallHandler { call, result ->
@@ -146,6 +188,7 @@ class MainActivity : FlutterActivity() {
     companion object {
         const val PERMISSIONS = "cz.l0ck.ecp/permissions"
         const val SCAN = "cz.l0ck.ecp/scan"
+        const val BIOMETRIC = "cz.l0ck.ecp/biometric"
         const val REQUEST_DISCOVERABLE = 7301
 
         /** Conversation from the last tapped notification, until Dart takes it. */

@@ -11,24 +11,21 @@ import '../security/security_service.dart';
 import 'contacts_screen.dart';
 import 'conversation_screen.dart';
 import 'radio_screen.dart';
+import 'recipients.dart';
+import 'reports.dart';
 import 'settings_screen.dart';
 import 'teams_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Home in the original L0ck-ECP look: brand bar, COMMS strip in PACE order, then panels
-/// for identity, own contact card and channels. Map, reports and the panic bar come in F5.
+/// Home in the original L0ck-ECP look: brand bar, COMMS strip in PACE order, new messages,
+/// identity, each channel with its state, and buttons for reports, the own contact card,
+/// contacts and teams.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({
-    super.key,
-    required this.messaging,
-    required this.security,
-    required this.onLock,
-  });
+  const HomeScreen({super.key, required this.messaging, required this.security});
 
   final MessagingService messaging;
   final SecurityService security;
-  final VoidCallback onLock;
 
   Session get session => messaging.session;
 
@@ -81,7 +78,66 @@ class HomeScreen extends StatelessWidget {
         },
       );
 
-  Widget _settings() => SettingsScreen(messaging: messaging, security: security, onLock: onLock);
+  Widget _settings() => SettingsScreen(messaging: messaging, security: security);
+
+  /// A report to anyone: the form first, then the recipients (teams and contacts together).
+  void _report(BuildContext context) => showReportMenu(context, (type, payload) async {
+        final to = await Navigator.of(context)
+            .push<Recipients>(MaterialPageRoute(builder: (_) => RecipientPicker(messaging: messaging)));
+        if (to == null) throw const SendCancelled();
+        for (final id in to.teams) {
+          await messaging.sendTeamPayload(id, type, payload);
+        }
+        for (final id in to.contacts) {
+          await messaging.sendPayload(id, type, payload);
+        }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(context.l.sentToN(to.teams.length + to.contacts.length))));
+        }
+      });
+
+  Widget _channel(BuildContext context, ({String status, bool up}) c) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(children: [
+          Dot(c.up ? L0ckColors.ok : L0ckColors.amber, size: 9),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(c.status,
+                key: const Key('channel'), style: TextStyle(color: c.up ? L0ckColors.text : L0ckColors.dim)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: c.up ? L0ckColors.ok : L0ckColors.amber, width: 0.8),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(c.up ? context.l.chConnected : context.l.chNoLink,
+                style: TextStyle(
+                    color: c.up ? L0ckColors.ok : L0ckColors.amber,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1)),
+          ),
+        ]),
+      );
+
+  Widget _button(IconData icon, String label, VoidCallback onTap, {Key? key, bool main = false}) =>
+      main
+          ? FilledButton.icon(
+              key: key,
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+              icon: Icon(icon),
+              label: Text(label),
+              onPressed: onTap,
+            )
+          : OutlinedButton.icon(
+              key: key,
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+              icon: Icon(icon),
+              label: FittedBox(child: Text(label)),
+              onPressed: onTap,
+            );
 
   void _open(BuildContext context, Widget screen) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
@@ -163,52 +219,78 @@ class HomeScreen extends StatelessWidget {
             ),
             Panel(
               title: context.l.channels,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                for (final line in messaging.channelStatus)
-                  Text(line, key: const Key('channel'), style: const TextStyle(color: L0ckColors.text)),
-                if (messaging.channelStatus.isEmpty)
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                for (final c in messaging.channelStates) _channel(context, c),
+                if (messaging.channelStates.isEmpty)
                   Text(context.l.noChannel, style: const TextStyle(color: L0ckColors.dim)),
               ]),
             ),
-            Panel(
-              title: context.l.myContact,
-              trailing: IconButton(
-                tooltip: context.l.copyMyLink,
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.copy, size: 18, color: L0ckColors.greenLight),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: link));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l.linkCopied)));
-                  }
-                },
+            _button(Icons.assignment_outlined, context.l.reportButton, () => _report(context),
+                key: const Key('home-reports'), main: true),
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(
+                child: _button(Icons.qr_code_2, context.l.myContact,
+                    () => _open(context, _MyContactScreen(link: link)),
+                    key: const Key('home-my-contact')),
               ),
-              child: Column(children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  color: Colors.white,
-                  child: QrImageView(data: link, size: 220),
+              const SizedBox(width: 10),
+              Expanded(
+                child: StreamBuilder<List<Contact>>(
+                  stream: session.db.watchContacts(),
+                  builder: (_, s) => _button(Icons.people_outline,
+                      context.l.contactsButton('${s.data?.length ?? '…'}'),
+                      () => _open(context, ContactsScreen(messaging: messaging))),
                 ),
-                const SizedBox(height: 8),
-                Text(context.l.showInPersonOnly, style: const TextStyle(color: L0ckColors.dim)),
-                const SizedBox(height: 6),
-                SelectableText(link,
-                    key: const Key('my-link'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10, color: L0ckColors.dim)),
-              ]),
-            ),
-            StreamBuilder<List<Contact>>(
-              stream: session.db.watchContacts(),
-              builder: (_, s) => FilledButton.icon(
-                icon: const Icon(Icons.people_outline),
-                label: Text(context.l.contactsButton('${s.data?.length ?? '…'}')),
-                onPressed: () => _open(context, ContactsScreen(messaging: messaging)),
               ),
-            ),
+            ]),
+            const SizedBox(height: 10),
+            _button(Icons.groups_outlined, context.l.teams, () => _open(context, TeamsScreen(messaging: messaging))),
           ]),
         ),
       ]),
     );
   }
+}
+
+/// The own contact card: QR code and link, shown in person only.
+class _MyContactScreen extends StatelessWidget {
+  const _MyContactScreen({required this.link});
+
+  final String link;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: Text(context.l.myContact),
+          actions: [
+            IconButton(
+              tooltip: context.l.copyMyLink,
+              icon: const Icon(Icons.copy, color: L0ckColors.greenLight),
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: link));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l.linkCopied)));
+                }
+              },
+            ),
+          ],
+        ),
+        body: ListView(padding: const EdgeInsets.all(16), children: [
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              color: Colors.white,
+              child: QrImageView(data: link, size: 260),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(context.l.showInPersonOnly, textAlign: TextAlign.center, style: const TextStyle(color: L0ckColors.dim)),
+          const SizedBox(height: 8),
+          SelectableText(link,
+              key: const Key('my-link'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10, color: L0ckColors.dim)),
+        ]),
+      );
 }

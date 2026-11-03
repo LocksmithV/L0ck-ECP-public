@@ -171,6 +171,9 @@ public final class BrambleHost implements BrambleNode.Listener {
 			case "deleteProfiles":
 				run(result, () -> deleteProfilesExcept(call.argument("keep")));
 				break;
+			case "deleteProfile":
+				run(result, () -> deleteProfile(call.argument("profile")));
+				break;
 			default:
 				result.notImplemented();
 		}
@@ -230,6 +233,14 @@ public final class BrambleHost implements BrambleNode.Listener {
 			}
 		}
 		return n;
+	}
+
+	/** The PIN screen's "compromised": removes one profile's Bramble data, no other. */
+	private boolean deleteProfile(String p) {
+		if (p == null || !PROFILE.matcher(p).matches()) throw new IllegalArgumentException("profile");
+		deleteFileOrDir(new File(new File(app.getFilesDir(), "bramble"), p));
+		deleteFileOrDir(new File(new File(app.getApplicationInfo().dataDir, "shared_prefs"), "bramble_" + p + ".xml"));
+		return true;
 	}
 
 	private void startService() {

@@ -6,9 +6,11 @@ import 'package:ecp_core/ecp_core.dart';
 import 'package:ecp_meshcore/ecp_meshcore.dart' show MeshCoreTransport;
 
 import '../data/database.dart';
+import '../security/lock_config.dart';
 import '../security/security_service.dart';
 import 'bramble_transport.dart';
 import 'meshcore_app_transport.dart';
+import 'panic.dart';
 import 'simplex_app_transport.dart';
 import 'sms_transport.dart';
 import '../l10n/lang.dart';
@@ -114,6 +116,10 @@ class MessagingService {
   /// One line per app-driven channel, e.g. "Bramble: tor, lan".
   List<String> get channelStatus => [for (final t in _appTransports) t.status];
 
+  /// The same lines, each with whether that channel can send right now (home screen).
+  List<({String status, bool up})> get channelStates =>
+      [for (final t in _appTransports) (status: t.status, up: t.isAvailable)];
+
   /// The channels a team uses besides P/A fan-out: the squad net and LoRa.
   List<String> get teamChannelStatus => [
         for (final t in _appTransports)
@@ -147,6 +153,8 @@ class MessagingService {
     await router.restore();
     final s = MessagingService._(session, router, keys, router.transports);
     s.ownPhone = await db.setting(ownPhoneKey);
+    s.panic = PanicConfig.decode(await db.setting(_panicKey));
+    s.lock = LockConfig.decode(await db.setting(_lockKey));
     final order = (await db.setting(_paceOrderKey))?.split(',');
     if (order != null && order.length == PaceLayer.values.length) {
       try {
@@ -166,6 +174,13 @@ class MessagingService {
   }
 
   EcpDatabase get _db => session.db;
+
+  /// Internet came or went (Net): SimpleX and Tor follow it, waiting messages try again and
+  /// a message stuck on a channel that just went down moves on.
+  Future<void> networkChanged() async {
+    channelsChanged.value++;
+    await router.availabilityChanged(DateTime.now());
+  }
 
   /// Plugs in a channel that came up after unlock (Bramble needs a few seconds to start).
   Future<void> addTransport(Transport t) async {
@@ -347,6 +362,7 @@ class MessagingService {
     channelsChanged.value++;
   }
 
+  /// The team's name is a local label: each member may call it as they like.
   Future<void> renameTeam(String id, String name) =>
       (_db.update(_db.teams)..where((t) => t.id.equals(id))).write(TeamsCompanion(name: Value(name)));
 
@@ -460,6 +476,70 @@ class MessagingService {
   }
 
   // --- PACE order ---
+
+  // --- PANIC (PIN screen) ---
+
+  static const _panicKey = 'panic';
+
+  /// What the PIN screen's PANIC sends (settings).
+  PanicConfig panic = const PanicConfig();
+
+  Future<void> setPanic(PanicConfig c) async {
+    panic = c;
+    await _db.setSetting(_panicKey, c.encode());
+  }
+
+  // --- locking (settings) ---
+
+  static const _lockKey = 'lock';
+
+  /// When the app locks itself and whether a fingerprint may open it.
+  LockConfig lock = const LockConfig();
+
+  Future<void> setLock(LockConfig c) async {
+    lock = c;
+    await _db.setSetting(_lockKey, c.encode());
+  }
+
+  /// PANIC, without the PIN: the configured status (or "compromised") with [position], then
+  /// the own text, to every contact and team [panic] names. Emergency mode: every channel at
+  /// once, SMS without asking. Returns the contact message ids and how many contacts and
+  /// teams it went to.
+  Future<({List<String> ids, int contacts, int teams})> sendPanic({bool compromised = false, Position? position}) async {
+    final c = panic;
+    final status =
+        StatusReport(compromised ? StatusCode.compromised : c.status, c.position ? position : null).encode();
+    final text = compromised || c.text.trim().isEmpty ? null : encodeText(c.text.trim());
+    final ids = <String>[];
+    var contacts = 0;
+    if (c.contacts) {
+      for (final k in await _db.select(_db.contacts).get()) {
+        contacts++;
+        ids.add(await sendPayload(k.id, MessageType.report, status, emergency: true));
+        if (text != null) ids.add(await sendPayload(k.id, MessageType.text, text, emergency: true));
+      }
+    }
+    var teams = 0;
+    if (c.teams) {
+      for (final t in await _db.select(_db.teams).get()) {
+        await sendTeamPayload(t.id, MessageType.report, status);
+        if (text != null) await sendTeamPayload(t.id, MessageType.text, text);
+        teams++;
+      }
+    }
+    return (ids: ids, contacts: contacts, teams: teams);
+  }
+
+  /// Waits until every message in [ids] is delivered, or [max] has passed — before the
+  /// profile that sent them is destroyed, so its channels get the chance to hand them on.
+  Future<void> awaitDelivery(List<String> ids, Duration max) async {
+    final end = DateTime.now().add(max);
+    while (DateTime.now().isBefore(end)) {
+      final rows = await (_db.select(_db.messages)..where((t) => t.id.isIn(ids))).get();
+      if (rows.every((m) => m.status == 'delivered' || m.status == 'read')) return;
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+  }
 
   static const _paceOrderKey = 'pace.order';
 
@@ -586,7 +666,7 @@ class MessagingService {
       sendPayload(contactId, MessageType.text, encodeText(text), emergency: emergency);
 
   /// Any message type (position, report, text) to one contact, through PACE.
-  Future<void> sendPayload(int contactId, int type, Uint8List payload, {bool emergency = false}) async {
+  Future<String> sendPayload(int contactId, int type, Uint8List payload, {bool emergency = false}) async {
     final now = DateTime.now();
     final id = await router.send('$contactId', type, payload, emergency: emergency, now: now);
     final s = _latest[id];
@@ -601,6 +681,7 @@ class MessagingService {
           via: Value(s?.$2),
         ));
     await _apply(id); // an event may have landed while the insert ran
+    return id;
   }
 
   Future<void> approveSms(String messageId) =>

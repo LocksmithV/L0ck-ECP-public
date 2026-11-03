@@ -277,13 +277,20 @@ kontakt (stejně jako soukromé zprávy Briaru, bez briar-core). Bramble dodá T
 Bluetooth, store-and-forward a vlastní šifrování spoje; ECP nad tím dělá end-to-end
 šifrování, ACK a deduplikaci. Kontakt Bramble se páruje s ECP kontaktem podle `briar://`
 odkazu z kontaktní karty (pole 0x03); Bramble kontakt vznikne, až si odkazy přidají obě
-strany (Tor rendezvous). Kanál je „dostupný“, když běží aspoň jeden z Tor/LAN/Bluetooth;
-Bramble zprávu doručí, jakmile se spojení objeví, router mezitím po 120 s eskaluje.
+strany (Tor rendezvous). Kontakt je přes Bramble dosažitelný, když k němu vede živé spojení
+(LAN, Bluetooth, Tor), nebo běží Tor a telefon má internet. Jen zapnutý Bluetooth nebo LAN
+nestačí: router by čekal 120 s na ACK, který nepřijde (2026-11-03).
 
 - Mód určuje pořadí kanálů; výchozí Evasion: **P SimpleX → A Bramble/Tor → C LoRa → E SMS**.
 - Zpráva jde nejbezpečnějším **dostupným** kanálem. Když ACK nedorazí v limitu kanálu
   (P 60 s, A 120 s, C 90 s, E 120 s), router pokračuje dalším. SMS se posílá až po potvrzení
   uživatelem nebo v nouzovém módu.
+- **Rychlejší přestup (2026-11-03):** kanál, který kontakt právě nedosáhne, se přeskočí hned,
+  bez čekání na ACK. Bez internetu (`NetHost.java`: výchozí síť Androidu s `INTERNET`;
+  záměrně ne `VALIDATED`, ta se ptá serverů Googlu a tam, kde jsou blokované, by vypnula
+  fungující internet) je nedostupný SimpleX i Tor. Když jede jen SMS, potvrzení SMS se
+  ukáže hned. Zpráva, která čeká na ACK na kanálu, jenž právě vypadl, přejde na další
+  okamžitě (`availabilityChanged`); kdyby dorazila i starou cestou, příjemce duplikát zahodí.
 - **Nic není dostupné:** zpráva čeká. Jakmile se kanál objeví (`availabilityChanged`), jde
   nejbezpečnějším z nich; bez změny to router zkusí znovu po 10 min. Po 24 h to vzdá
   (stav „nedoručeno“).
@@ -364,6 +371,41 @@ Bramble zprávu doručí, jakmile se spojení objeví, router mezitím po 120 s 
 | Rádiové zaměření | lokalizace vysílače LoRa/BT | Evasion profil rádia, vysílání jen na pokyn, upozornění v UI |
 | Provozovatel relay serveru | metadata SimpleX | víc provozovatelů, soukromé směrování, Tor |
 | Zlovolný člen týmu | čte a podvrhuje týmové zprávy | párové zprávy pro citlivé věci, podpisy v v2, rotace týmového klíče |
+
+**PANIC a KOMPROMITOVÁN na obrazovce PINu (2026-11-02):** dokud profil běží za zámkem
+(zámek je jen obrazovka), jsou na obrazovce PINu dvě tlačítka, která PIN nepotřebují. Po
+restartu nebo po výmazu tam nejsou: bez otevřeného profilu nejsou klíče ani kontakty.
+- **PANIC** (jedno klepnutí) pošle nastavený STATUS s polohou (čerstvý fix do 6 s, jinak
+  poslední známý) a pak vlastní text (≤ 90 B) všem kontaktům a týmům podle nastavení.
+  Kontaktům v nouzovém režimu routeru: všemi dostupnými kanály najednou, SMS bez potvrzení;
+  týmům jako běžná týmová zpráva (vysílání + rozeslání členům přes P/A).
+- **KOMPROMITOVÁN**: první klepnutí jen zobrazí potvrzení nahoře na obrazovce (6 s), daleko
+  od tlačítka. Po potvrzení odejde STATUS „kompromitován“ stejným příjemcům, aplikace dá
+  kanálům 3–10 s na předání (čeká na ACK kontaktů) a pak `SecurityService.destroyProfile`
+  zničí běžící profil jako duress kód: nejdřív jeho slot (crypto-shred), pak zastaví kanály,
+  smaže jeho databázi a jen jeho data Bramble a SimpleX. Druhý slot zůstává, jak byl
+  (návnada, nebo šum), takže obrazovka PINu vypadá stejně a duress kód dál otevře návnadu.
+  Bez duress kódu už aplikaci nic neotevře (po 10 chybách se vymaže vše).
+- Nastavení (stav, text, poloha, kontakty/týmy, která tlačítka ukázat) je v šifrované
+  databázi profilu (`PanicConfig`, klíč `panic`).
+
+**Zamykání a otisk prstu (0.1.1, 2026-11-03):** zámek je dál jen obrazovka nad běžícím
+profilem. Nastavení (`LockConfig`, klíč `lock` v šifrované databázi profilu):
+- *Zamknout po odchodu z aplikace*: ihned (výchozí), po 1/5/15 min, nebo jen ručně. Ručně
+  znamená nouzové zamknutí (4 rychlá klepnutí), které pak nejde vypnout; jinak je to
+  přepínač. Po restartu telefonu nebo aplikace je PIN potřeba vždy (klíč profilu se z něj
+  odvozuje).
+- *Otisk prstu* (systémový `BiometricPrompt`, jen silná biometrie, Android 11+) jen odkryje
+  obrazovku běžícího profilu; žádný klíč na něm nezávisí. Otisk nemá duress kód, proto jde
+  zapnout jen s tlačítky PANIC i KOMPROMITOVÁN na obrazovce PINu a ta pak nejdou vypnout.
+  PIN je potřeba po restartu, po nouzovém zamknutí a 8 h od posledního zadání PINu.
+
+**Úvodní obrazovka a nastavení (0.1.1):** kanály mají každý řádek se stavem PŘIPOJENO / BEZ
+SPOJENÍ, vlastní karta (QR) je na samostatné obrazovce. Tlačítko *Hlášení* vede na formulář
+a pak na výběr příjemců (týmy a libovolně kontaktů najednou); každému jde jako běžná zpráva
+přes PACE. Nastavení je ve třech rozbalovacích oddílech: Bezpečnost (PIN a duress, zamykání,
+otisk, PANIC), Konektivita (číslo pro SMS, pořadí PACE, obnova spojení, rádio LoRa),
+Aplikace (přezdívka, jazyk), a samostatně O aplikaci.
 
 **Jazyk a About (2026-11-02):** aplikace je česky a anglicky (Flutter `gen-l10n`,
 `app/lib/l10n/app_cs.arb` je šablona, `app_en.arb` překlad). Přepínač je v Nastavení; volba

@@ -6,6 +6,7 @@ import 'package:ecp_core/ecp_core.dart';
 import '../data/database.dart';
 import '../platform/bramble.dart';
 import '../l10n/lang.dart';
+import '../platform/net.dart';
 
 /// A transport the app drives itself: it pushes what arrives into the router and says when
 /// its availability changed. MessagingService binds it on start.
@@ -92,12 +93,20 @@ class BrambleTransport extends AppTransport {
   String get status =>
       Lang.tr.stBramble(_active.isEmpty ? Lang.tr.waitingNetwork : (_active.toList()..sort()).join(', '));
 
-  /// Up as soon as any of Tor, LAN or Bluetooth is.
+  /// Can send now: a live link to some contact (LAN, Bluetooth, Tor), or Tor with internet.
+  /// Bluetooth or LAN merely switched on is not enough (see [canReach]); the status line
+  /// still lists every transport that runs.
   @override
-  bool get isAvailable => _active.isNotEmpty;
+  bool get isAvailable =>
+      (_active.contains('tor') && Net.online.value) || _links.values.any((l) => l.isNotEmpty);
 
+  /// A Bramble contact, and a way to them now: a live link (LAN, Bluetooth, Tor), or Tor
+  /// running with internet to find them. Bluetooth or LAN merely switched on is not enough:
+  /// PACE would wait 120 s for an ACK that cannot come, so it moves on at once instead.
   @override
-  bool canReach(String contactId) => _brambleId.containsKey(_linkOf[contactId]);
+  bool canReach(String contactId) =>
+      _brambleId.containsKey(_linkOf[contactId]) &&
+      (linksTo(contactId).isNotEmpty || (_active.contains('tor') && Net.online.value));
 
   /// Links to [contactId] right now (tor / lan / bluetooth).
   Set<String> linksTo(String contactId) => _links[_brambleId[_linkOf[contactId]]] ?? const {};

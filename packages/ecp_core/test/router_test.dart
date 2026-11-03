@@ -161,6 +161,28 @@ void main() {
     expect(bob.received.single.via, 'lora');
   });
 
+  test('the channel waiting for an ACK goes down: next layer at once, not at the timeout', () async {
+    alice.transport('simplex').lossy = true; // handed over, but the internet is already gone
+    await sendText('now');
+    await net.pump(t0);
+    expect(sentLayers(alice), [PaceLayer.primary]);
+    alice.transport('simplex').available = false;
+    final soon = t0.add(const Duration(seconds: 2));
+    await alice.router.availabilityChanged(soon);
+    await net.pump(soon);
+    expect(sentLayers(alice), [PaceLayer.primary, PaceLayer.alternate]);
+    expect(bob.received.single.via, 'bramble');
+  });
+
+  test('only SMS left: the approval is asked for at once, with no ACK waits', () async {
+    for (final id in ['simplex', 'bramble', 'lora']) {
+      alice.transport(id).available = false;
+    }
+    final id = await sendText('sms only');
+    expect(alice.events.whereType<ConfirmationNeeded>().single.id, id);
+    expect(sentLayers(alice), isEmpty);
+  });
+
   test('SMS only after the user approves it', () async {
     for (final id in ['simplex', 'bramble', 'lora']) {
       alice.transport(id).available = false;

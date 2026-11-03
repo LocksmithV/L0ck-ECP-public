@@ -812,5 +812,90 @@
         "type": "String"
       }
     }
-  }
+  },
+  "panicButton": "PANIC",
+  "compromiseButton": "KOMPROMITOVÁN",
+  "confirmCompromise": "POTVRDIT: KOMPROMITOVÁN\nodeslat a smazat profil",
+  "panicSending": "Odesílám…",
+  "panicFailed": "PANIC se nepodařilo odeslat.",
+  "panicSent": "PANIC odeslán: {c} kontaktům, {t} týmům",
+  "@panicSent": {
+    "placeholders": {
+      "c": {
+        "type": "int"
+      },
+      "t": {
+        "type": "int"
+      }
+    }
+  },
+  "panicTitle": "PANIC A KOMPROMITOVÁN",
+  "panicHelp": "Tlačítka na obrazovce PINu fungují bez PINu, dokud aplikace běží za zámkem. PANIC odejde hned všemi kanály najednou, SMS bez potvrzení.",
+  "panicButtonOn": "Tlačítko PANIC",
+  "panicStatus": "Stav, který PANIC pošle",
+  "panicText": "Vlastní zpráva (nepovinné)",
+  "panicToContacts": "Všem kontaktům",
+  "panicToTeams": "Všem týmům",
+  "compromiseOn": "Tlačítko KOMPROMITOVÁN",
+  "compromiseHelp": "Pošle stejným příjemcům stav Kompromitován a pak zničí tento profil stejně jako duress kód. Potvrzuje se druhým tlačítkem nahoře na obrazovce. Duress kód pak otevře návnadu; bez duress kódu už aplikaci nic neotevře.",
+  "renameTeam": "Přejmenovat tým",
+  "noInternet": "bez internetu",
+  "secSecurity": "Bezpečnost",
+  "secSecuritySub": "PIN, duress kód, zamykání, otisk prstu, PANIC",
+  "secConnectivity": "Konektivita",
+  "secConnectivitySub": "Číslo pro SMS, pořadí PACE, obnova spojení, rádio LoRa",
+  "secApp": "Aplikace",
+  "secAppSub": "Přezdívka, jazyk",
+  "pinCodes": "PIN a duress kód",
+  "lockTitle": "Zamykání",
+  "lockAfter": "Zamknout po odchodu z aplikace",
+  "lockNow": "Ihned",
+  "lockMinutes": "Po {n} min",
+  "@lockMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lockManual": "Jen ručně (4 klepnutí)",
+  "lockHelp": "Po restartu telefonu nebo aplikace je PIN potřeba vždy.",
+  "quickLockNeeded": "Při zamykání jen ručně musí zůstat zapnuté.",
+  "bioTitle": "Odemknutí otiskem prstu",
+  "bioHelp": "Jen pro návrat do běžícího profilu. PIN je potřeba po restartu, po nouzovém zamknutí a {h} h od posledního zadání PINu. Otisk nemá duress kód.",
+  "@bioHelp": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "bioNeedsPanic": "Vyžaduje zapnuté tlačítko PANIC i KOMPROMITOVÁN.",
+  "bioUnavailable": "Telefon nemá nastavený otisk prstu.",
+  "bioLocksPanic": "Při odemykání otiskem musí zůstat zapnuté.",
+  "bioPrompt": "Odemknout L0ck-ECP",
+  "bioUsePin": "Použít PIN",
+  "bioButton": "Otisk prstu",
+  "chConnected": "PŘIPOJENO",
+  "chNoLink": "BEZ SPOJENÍ",
+  "reportButton": "Hlášení",
+  "sendTo": "Komu poslat",
+  "selectAll": "Vybrat vše",
+  "sendToN": "ODESLAT ({n})",
+  "@sendToN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "sentToN": "Odesláno: {n} příjemcům",
+  "@sentToN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "noRecipients": "Zatím nemáš žádné kontakty ani týmy."
 }

@@ -8,6 +8,7 @@ import 'package:ecp_simplex/ffi.dart';
 import '../data/database.dart';
 import 'bramble_transport.dart';
 import '../l10n/lang.dart';
+import '../platform/net.dart';
 
 /// PACE layer P in the app: SimpleX Chat's core (libsimplex.so) with one encrypted database
 /// per ECP profile, in a directory named like the profile's Bramble one, so duress and wipe
@@ -41,8 +42,9 @@ class SimplexAppTransport extends AppTransport {
   @override
   PaceLayer? get layer => _inner.layer;
 
+  /// Relays need the internet: without any, PACE moves on at once (no 60 s ACK wait).
   @override
-  bool get isAvailable => _inner.isAvailable;
+  bool get isAvailable => _inner.isAvailable && Net.online.value;
 
   @override
   bool canReach(String contactId) => _inner.canReach(contactId);
@@ -55,7 +57,11 @@ class SimplexAppTransport extends AppTransport {
   String? get ownLink => _inner.address;
 
   @override
-  String get status => Lang.tr.stSimplex(_inner.isAvailable ? Lang.tr.active : Lang.tr.unavailable);
+  String get status => Lang.tr.stSimplex(!_inner.isAvailable
+      ? Lang.tr.unavailable
+      : Net.online.value
+          ? Lang.tr.active
+          : Lang.tr.noInternet);
 
   @override
   void bind({

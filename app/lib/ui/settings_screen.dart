@@ -1,13 +1,20 @@
+import 'dart:convert';
+
 import 'package:ecp_core/ecp_core.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/lang.dart';
 import '../messaging/messaging_service.dart';
+import '../messaging/panic.dart';
 import 'about_screen.dart';
 import '../messaging/sms_transport.dart';
+import '../platform/biometric.dart';
 import '../platform/radio.dart';
+import '../security/lock_config.dart';
 import '../security/security_service.dart';
 import 'quick_lock.dart';
+import 'radio_screen.dart';
+import 'reports.dart' show statusLabel;
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -33,20 +40,14 @@ String _country(AppLocalizations l, String prefix) => switch (prefix) {
       _ => l.us,
     };
 
-/// Settings: name, own number for SMS, PIN and duress code, and the emergency lock. PIN and
-/// duress code can be changed but never shown — they are not stored anywhere, only the keys
-/// derived from them.
+/// Settings in three sections that open one at a time — security, connectivity, the app —
+/// and About. PIN and duress code can be changed but never shown: they are not stored
+/// anywhere, only the keys derived from them.
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({
-    super.key,
-    required this.messaging,
-    required this.security,
-    required this.onLock,
-  });
+  const SettingsScreen({super.key, required this.messaging, required this.security});
 
   final MessagingService messaging;
   final SecurityService security;
-  final VoidCallback onLock;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -56,6 +57,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _prefix;
   final _number = TextEditingController();
   bool _busy = false;
+
+  /// The open section, if any.
+  String? _section;
 
   @override
   void initState() {
@@ -176,143 +180,364 @@ class _SettingsScreenState extends State<SettingsScreen> {
         remove ? l.duressRemoved : l.duressSet);
   }
 
+  /// A section header that opens [children] below it; opening one closes the others.
+  Widget _group(String id, IconData icon, String title, String subtitle, List<Widget> children) {
+    final open = _section == id;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: L0ckColors.panel,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: open ? L0ckColors.green : L0ckColors.border, width: open ? 1 : 0.5),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            key: Key('section-$id'),
+            leading: Icon(icon, color: open ? L0ckColors.orange : L0ckColors.greenLight),
+            title: Text(title,
+                style: const TextStyle(color: L0ckColors.data, fontSize: 16, fontWeight: FontWeight.bold)),
+            subtitle: Text(subtitle, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+            trailing: Icon(open ? Icons.expand_less : Icons.expand_more, color: L0ckColors.greenLight),
+            onTap: () => setState(() => _section = open ? null : id),
+          ),
+        ),
+        if (open)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+          ),
+      ]),
+    );
+  }
+
+  void _push(Widget screen) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+
   @override
   Widget build(BuildContext context) {
     final m = widget.messaging;
+    final l = context.l;
+    void changed() => setState(() {});
     return Scaffold(
-      appBar: AppBar(title: Text(context.l.settings)),
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const L0ckTitle(),
+            const SizedBox(width: 10),
+            Text(l.settings, style: const TextStyle(color: L0ckColors.text, fontSize: 17)),
+          ]),
+        ),
+      ),
       body: AbsorbPointer(
         absorbing: _busy,
         child: ListView(padding: const EdgeInsets.all(12), children: [
           if (_busy) const LinearProgressIndicator(),
-          Panel(
-            title: context.l.profile,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(m.session.nickname,
-                  style: const TextStyle(color: L0ckColors.data, fontWeight: FontWeight.bold)),
-              subtitle: Text(context.l.nicknameOnCard, style: const TextStyle(color: L0ckColors.dim)),
-              trailing: const Icon(Icons.edit),
-              onTap: _rename,
+          _group('security', Icons.shield_outlined, l.secSecurity, l.secSecuritySub, [
+            Panel(
+              title: l.pinCodes,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(l.pinNotStored, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+                const SizedBox(height: 8),
+                OutlinedButton(onPressed: _changePin, child: Text(l.changePin)),
+                OutlinedButton(onPressed: () => _setDuress(remove: false), child: Text(l.setNewDuress)),
+                OutlinedButton(onPressed: () => _setDuress(remove: true), child: Text(l.removeDuress)),
+              ]),
             ),
-          ),
-          Panel(
-            title: context.l.smsNumberLayer,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Row(children: [
-                DropdownButton<String>(
-                  value: _prefix,
-                  dropdownColor: L0ckColors.panel,
-                  items: [
-                    for (final p in _prefixes)
-                      DropdownMenuItem(value: p, child: Text('$p  ${_country(context.l, p)}')),
-                  ],
-                  selectedItemBuilder: (_) => [for (final k in _prefixes) Center(child: Text(k))],
-                  onChanged: (v) => setState(() => _prefix = v!),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _number,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(labelText: context.l.number),
+            _LockPanel(messaging: m, onChanged: changed),
+            _PanicPanel(messaging: m, onChanged: changed),
+          ]),
+          _group('net', Icons.cell_tower, l.secConnectivity, l.secConnectivitySub, [
+            Panel(
+              title: l.smsNumberLayer,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(children: [
+                  DropdownButton<String>(
+                    value: _prefix,
+                    dropdownColor: L0ckColors.panel,
+                    items: [
+                      for (final p in _prefixes) DropdownMenuItem(value: p, child: Text('$p  ${_country(l, p)}')),
+                    ],
+                    selectedItemBuilder: (_) => [for (final k in _prefixes) Center(child: Text(k))],
+                    onChanged: (v) => setState(() => _prefix = v!),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _number,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(labelText: l.number),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                Text(l.simChangeHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+                const SizedBox(height: 8),
+                FilledButton(onPressed: _savePhone, child: Text(l.saveNumber)),
+              ]),
+            ),
+            Panel(
+              title: l.paceOrder,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text(l.paceOrderHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+                ReorderableListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  onReorderItem: (from, to) {
+                    final order = [...m.paceOrder];
+                    order.insert(to, order.removeAt(from));
+                    m.setPaceOrder(order).then((_) => setState(() {}));
+                  },
+                  children: [
+                    for (final (i, layer) in m.paceOrder.indexed)
+                      ListTile(
+                        key: ValueKey(layer),
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Text('${i + 1}', style: const TextStyle(color: L0ckColors.orange, fontSize: 16)),
+                        title: Text(_layerName(l, layer), style: const TextStyle(color: L0ckColors.text)),
+                        trailing: ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_handle)),
+                      ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () => m.setPaceOrder(PaceProfile.evasion.order).then((_) => setState(() {})),
+                  child: Text(l.paceDefault),
                 ),
               ]),
-              const SizedBox(height: 8),
-              Text(context.l.simChangeHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
-              const SizedBox(height: 8),
-              FilledButton(onPressed: _savePhone, child: Text(context.l.saveNumber)),
-            ]),
-          ),
-          _ReconnectPanel(messaging: m),
-          Panel(
-            title: context.l.paceOrder,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(context.l.paceOrderHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
-              ReorderableListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                onReorderItem: (from, to) {
-                  final order = [...m.paceOrder];
-                  order.insert(to, order.removeAt(from));
-                  m.setPaceOrder(order).then((_) => setState(() {}));
-                },
-                children: [
-                  for (final (i, l) in m.paceOrder.indexed)
-                    ListTile(
-                      key: ValueKey(l),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Text('${i + 1}', style: const TextStyle(color: L0ckColors.orange, fontSize: 16)),
-                      title: Text(_layerName(context.l, l), style: const TextStyle(color: L0ckColors.text)),
-                      trailing: ReorderableDragStartListener(index: i, child: const Icon(Icons.drag_handle)),
-                    ),
-                ],
-              ),
-              TextButton(
-                onPressed: () => m.setPaceOrder(PaceProfile.evasion.order).then((_) => setState(() {})),
-                child: Text(context.l.paceDefault),
-              ),
-            ]),
-          ),
-          Panel(
-            title: context.l.security,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(context.l.pinNotStored, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
-              const SizedBox(height: 8),
-              OutlinedButton(onPressed: _changePin, child: Text(context.l.changePin)),
-              OutlinedButton(
-                  onPressed: () => _setDuress(remove: false),
-                  child: Text(context.l.setNewDuress)),
-              OutlinedButton(
-                  onPressed: () => _setDuress(remove: true), child: Text(context.l.removeDuress)),
-            ]),
-          ),
-          Panel(
-            title: context.l.emergencyLock,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(context.l.emergencyLockHelp(QuickLock.taps), style: const TextStyle(color: L0ckColors.text)),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: L0ckColors.red.withValues(alpha: 0.25),
-                  side: const BorderSide(color: L0ckColors.red),
-                  minimumSize: const Size.fromHeight(64),
-                ),
-                icon: const Icon(Icons.lock, size: 28),
-                label: Text(context.l.lockAndHide, style: const TextStyle(fontSize: 16)),
-                onPressed: () {
-                  widget.onLock();
-                  QuickLock.minimize().ignore();
-                },
-              ),
-            ]),
-          ),
-          Panel(
-            title: context.l.language,
-            child: SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'cs', label: Text('Čeština')),
-                ButtonSegment(value: 'en', label: Text('English')),
-              ],
-              selected: {Lang.current.value.languageCode},
-              onSelectionChanged: (v) async {
-                await Lang.set(Locale(v.first));
-                widget.messaging.channelsChanged.value++; // channel lines in the new language
-              },
             ),
-          ),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.info_outline),
-            label: Text(context.l.about),
-            onPressed: () =>
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AboutScreen())),
+            _ReconnectPanel(messaging: m),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.settings_input_antenna),
+                label: Text(l.loraRadio),
+                onPressed: () => _push(RadioScreen(messaging: m)),
+              ),
+            ),
+          ]),
+          _group('app', Icons.tune, l.secApp, l.secAppSub, [
+            Panel(
+              title: l.profile,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(m.session.nickname,
+                    style: const TextStyle(color: L0ckColors.data, fontWeight: FontWeight.bold)),
+                subtitle: Text(l.nicknameOnCard, style: const TextStyle(color: L0ckColors.dim)),
+                trailing: const Icon(Icons.edit),
+                onTap: _rename,
+              ),
+            ),
+            Panel(
+              title: l.language,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'cs', label: Text('Čeština')),
+                  ButtonSegment(value: 'en', label: Text('English')),
+                ],
+                selected: {Lang.current.value.languageCode},
+                onSelectionChanged: (v) async {
+                  await Lang.set(Locale(v.first));
+                  widget.messaging.channelsChanged.value++; // channel lines in the new language
+                },
+              ),
+            ),
+          ]),
+          Container(
+            decoration: BoxDecoration(
+              color: L0ckColors.panel,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: L0ckColors.border, width: 0.5),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: ListTile(
+                key: const Key('about'),
+                leading: const Icon(Icons.info_outline, color: L0ckColors.greenLight),
+                title: Text(l.about,
+                    style: const TextStyle(color: L0ckColors.data, fontSize: 16, fontWeight: FontWeight.bold)),
+                trailing: const Icon(Icons.chevron_right, color: L0ckColors.greenLight),
+                onTap: () => _push(const AboutScreen()),
+              ),
+            ),
           ),
           const SizedBox(height: 24),
         ]),
       ),
+    );
+  }
+}
+
+/// When the app locks, the emergency lock and the fingerprint. Locking only by hand needs the
+/// four taps; the fingerprint needs PANIC and KOMPROMITOVÁN on the PIN screen.
+class _LockPanel extends StatefulWidget {
+  const _LockPanel({required this.messaging, required this.onChanged});
+  final MessagingService messaging;
+  final VoidCallback onChanged;
+
+  @override
+  State<_LockPanel> createState() => _LockPanelState();
+}
+
+class _LockPanelState extends State<_LockPanel> {
+  bool? _sensor;
+
+  @override
+  void initState() {
+    super.initState();
+    Biometric.available().then((v) {
+      if (mounted) setState(() => _sensor = v);
+    });
+  }
+
+  LockConfig get _c => widget.messaging.lock;
+
+  Future<void> _save(LockConfig c) async {
+    await widget.messaging.setLock(c);
+    widget.onChanged();
+  }
+
+  /// Switching it on takes one fingerprint, so it is known to work before it is needed.
+  Future<void> _biometric(bool on) async {
+    final l = context.l;
+    if (on && !await Biometric.authenticate(title: l.bioTitle, cancel: l.cancel)) return;
+    await _save(_c.copyWith(biometric: on));
+  }
+
+  String _label(AppLocalizations l, Duration? d) => switch (d) {
+        null => l.lockManual,
+        Duration.zero => l.lockNow,
+        _ => l.lockMinutes(d.inMinutes),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l, c = _c, p = widget.messaging.panic;
+    final panicOn = p.button && p.compromiseButton;
+    return Panel(
+      title: l.lockTitle,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        DropdownButtonFormField<int>(
+          key: const Key('lock-after'),
+          initialValue: c.after?.inSeconds ?? -1,
+          dropdownColor: L0ckColors.panel,
+          decoration: InputDecoration(labelText: l.lockAfter),
+          items: [
+            for (final d in LockConfig.choices)
+              DropdownMenuItem(value: d?.inSeconds ?? -1, child: Text(_label(l, d))),
+          ],
+          onChanged: (s) => _save(c.withAfter(s == null || s < 0 ? null : Duration(seconds: s))),
+        ),
+        const SizedBox(height: 6),
+        Text(l.lockHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+        const Divider(color: L0ckColors.border),
+        SwitchListTile(
+          key: const Key('quick-lock'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(l.emergencyLock, style: const TextStyle(color: L0ckColors.text)),
+          subtitle: Text(c.after == null ? l.quickLockNeeded : l.emergencyLockHelp(QuickLock.taps),
+              style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+          value: c.quickLock,
+          onChanged: c.after == null ? null : (v) => _save(c.copyWith(quickLock: v)),
+        ),
+        const Divider(color: L0ckColors.border),
+        SwitchListTile(
+          key: const Key('biometric-switch'),
+          contentPadding: EdgeInsets.zero,
+          secondary: const Icon(Icons.fingerprint, color: L0ckColors.greenLight),
+          title: Text(l.bioTitle, style: const TextStyle(color: L0ckColors.text)),
+          subtitle: Text(
+              _sensor == false && !c.biometric
+                  ? l.bioUnavailable
+                  : !panicOn && !c.biometric
+                      ? l.bioNeedsPanic
+                      : l.bioHelp(LockConfig.biometricFor.inHours),
+              style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+          value: c.biometric,
+          onChanged: c.biometric || (_sensor == true && panicOn) ? _biometric : null,
+        ),
+      ]),
+    );
+  }
+}
+
+/// What the PIN screen's PANIC and KOMPROMITOVÁN do. Saved as soon as something changes.
+class _PanicPanel extends StatefulWidget {
+  const _PanicPanel({required this.messaging, required this.onChanged});
+  final MessagingService messaging;
+  final VoidCallback onChanged;
+
+  @override
+  State<_PanicPanel> createState() => _PanicPanelState();
+}
+
+class _PanicPanelState extends State<_PanicPanel> {
+  late PanicConfig _c = widget.messaging.panic;
+  late final _text = TextEditingController(text: _c.text);
+
+  int get _bytes => utf8.encode(_text.text.trim()).length;
+
+  Future<void> _save(PanicConfig c) async {
+    setState(() => _c = c);
+    await widget.messaging.setPanic(c);
+    widget.onChanged();
+  }
+
+  Widget _switch(String title, bool value, ValueChanged<bool>? on, {String? note}) => SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(title, style: const TextStyle(color: L0ckColors.text)),
+        subtitle: note == null ? null : Text(note, style: const TextStyle(color: L0ckColors.orange, fontSize: 12)),
+        value: value,
+        onChanged: on,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l;
+    // The fingerprint has no duress code: both buttons stay while it unlocks
+    final held = widget.messaging.lock.biometric;
+    return Panel(
+      title: l.panicTitle,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(l.panicHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+        _switch(l.panicButtonOn, _c.button, held ? null : (v) => _save(_c.copyWith(button: v)),
+            note: held ? l.bioLocksPanic : null),
+        DropdownButtonFormField<StatusCode>(
+          initialValue: _c.status,
+          dropdownColor: L0ckColors.panel,
+          decoration: InputDecoration(labelText: l.panicStatus),
+          items: [
+            for (final st in StatusCode.values)
+              if (st != StatusCode.ok) DropdownMenuItem(value: st, child: Text(statusLabel(st))),
+          ],
+          onChanged: (v) => _save(_c.copyWith(status: v)),
+        ),
+        TextField(
+          controller: _text,
+          maxLines: null,
+          decoration: InputDecoration(
+            labelText: l.panicText,
+            counterText: l.textBudget(_bytes, maxReportText),
+            errorText: _bytes > maxReportText ? l.tooLongLora : null,
+          ),
+          onChanged: (t) {
+            setState(() {});
+            if (utf8.encode(t.trim()).length <= maxReportText) _save(_c.copyWith(text: t.trim()));
+          },
+        ),
+        _switch(l.attachPosition, _c.position, (v) => _save(_c.copyWith(position: v))),
+        _switch(l.panicToContacts, _c.contacts, (v) => _save(_c.copyWith(contacts: v))),
+        _switch(l.panicToTeams, _c.teams, (v) => _save(_c.copyWith(teams: v))),
+        const Divider(color: L0ckColors.border),
+        _switch(l.compromiseOn, _c.compromiseButton,
+            held ? null : (v) => _save(_c.copyWith(compromiseButton: v)),
+            note: held ? l.bioLocksPanic : null),
+        Text(l.compromiseHelp, style: const TextStyle(color: L0ckColors.dim, fontSize: 12)),
+      ]),
     );
   }
 }

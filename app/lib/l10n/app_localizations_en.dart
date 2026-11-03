@@ -1209,4 +1209,161 @@ class AppLocalizationsEn extends AppLocalizations {
   String stLora(String s) {
     return 'LoRa: $s';
   }
+
+  @override
+  String get panicButton => 'PANIC';
+
+  @override
+  String get compromiseButton => 'COMPROMISED';
+
+  @override
+  String get confirmCompromise =>
+      'CONFIRM: COMPROMISED\nsend and destroy the profile';
+
+  @override
+  String get panicSending => 'Sending…';
+
+  @override
+  String get panicFailed => 'PANIC could not be sent.';
+
+  @override
+  String panicSent(int c, int t) {
+    return 'PANIC sent: $c contacts, $t teams';
+  }
+
+  @override
+  String get panicTitle => 'PANIC AND COMPROMISED';
+
+  @override
+  String get panicHelp =>
+      'The buttons on the PIN screen work without the PIN while the app runs behind the lock. PANIC goes out at once over every channel, SMS without confirmation.';
+
+  @override
+  String get panicButtonOn => 'PANIC button';
+
+  @override
+  String get panicStatus => 'Status PANIC sends';
+
+  @override
+  String get panicText => 'Own message (optional)';
+
+  @override
+  String get panicToContacts => 'To all contacts';
+
+  @override
+  String get panicToTeams => 'To all teams';
+
+  @override
+  String get compromiseOn => 'COMPROMISED button';
+
+  @override
+  String get compromiseHelp =>
+      'Sends the Compromised status to the same recipients, then destroys this profile just as the duress code does. Confirmed with a second button at the top of the screen. The duress code then opens the decoy; without a duress code nothing opens the app any more.';
+
+  @override
+  String get renameTeam => 'Rename team';
+
+  @override
+  String get noInternet => 'no internet';
+
+  @override
+  String get secSecurity => 'Security';
+
+  @override
+  String get secSecuritySub => 'PIN, duress code, locking, fingerprint, PANIC';
+
+  @override
+  String get secConnectivity => 'Connectivity';
+
+  @override
+  String get secConnectivitySub =>
+      'SMS number, PACE order, reconnecting, LoRa radio';
+
+  @override
+  String get secApp => 'App';
+
+  @override
+  String get secAppSub => 'Nickname, language';
+
+  @override
+  String get pinCodes => 'PIN and duress code';
+
+  @override
+  String get lockTitle => 'Locking';
+
+  @override
+  String get lockAfter => 'Lock after leaving the app';
+
+  @override
+  String get lockNow => 'At once';
+
+  @override
+  String lockMinutes(int n) {
+    return 'After $n min';
+  }
+
+  @override
+  String get lockManual => 'Only by hand (4 taps)';
+
+  @override
+  String get lockHelp =>
+      'After restarting the phone or the app the PIN is always needed.';
+
+  @override
+  String get quickLockNeeded => 'Must stay on while locking is by hand only.';
+
+  @override
+  String get bioTitle => 'Unlock with fingerprint';
+
+  @override
+  String bioHelp(int h) {
+    return 'Only to return to the running profile. The PIN is needed after a restart, after the emergency lock and $h h after it was last typed. A fingerprint has no duress code.';
+  }
+
+  @override
+  String get bioNeedsPanic =>
+      'Needs both the PANIC and the COMPROMISED button on.';
+
+  @override
+  String get bioUnavailable => 'No fingerprint is set up on this phone.';
+
+  @override
+  String get bioLocksPanic => 'Must stay on while the fingerprint unlocks.';
+
+  @override
+  String get bioPrompt => 'Unlock L0ck-ECP';
+
+  @override
+  String get bioUsePin => 'Use PIN';
+
+  @override
+  String get bioButton => 'Fingerprint';
+
+  @override
+  String get chConnected => 'CONNECTED';
+
+  @override
+  String get chNoLink => 'NO LINK';
+
+  @override
+  String get reportButton => 'Reports';
+
+  @override
+  String get sendTo => 'Send to';
+
+  @override
+  String get selectAll => 'Select all';
+
+  @override
+  String sendToN(int n) {
+    return 'SEND ($n)';
+  }
+
+  @override
+  String sentToN(int n) {
+    return 'Sent to $n recipients';
+  }
+
+  @override
+  String get noRecipients => 'No contacts or teams yet.';
 }

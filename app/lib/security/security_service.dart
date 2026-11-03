@@ -85,6 +85,7 @@ class SecurityService {
     this.runInIsolate = true,
     this.stretcher,
     this.onProfilesDestroyed,
+    this.onProfileDestroyed,
   });
 
   final Directory dir;
@@ -100,6 +101,10 @@ class SecurityService {
   /// Called after duress or a wipe destroyed profiles, with the Bramble profile that
   /// survives (null: none), so data outside this directory goes too.
   final Future<void> Function(String? keepBrambleProfile)? onProfilesDestroyed;
+
+  /// Called after [destroyProfile] destroyed one profile, with its Bramble profile: only
+  /// that one's data outside this directory goes (the other slot's is unknown here).
+  final Future<void> Function(String brambleProfile)? onProfileDestroyed;
 
   static const minPinLength = 6;
   static const maxPinLength = 12;
@@ -194,6 +199,32 @@ class SecurityService {
     await _deleteDatabasesExcept(null);
     await _profilesDestroyed(null);
     if (await _attemptsFile.exists()) await _attemptsFile.delete();
+  }
+
+  /// The PIN screen's KOMPROMITOVÁN: the open profile is destroyed as the duress code would
+  /// destroy it, without any code — it is open already. Its slot goes first (from then on
+  /// its data cannot be decrypted), then [close] stops what still uses it, then its files.
+  /// The other slot stays as it was, a decoy or noise: the PIN screen looks unchanged and a
+  /// duress code still opens the decoy.
+  Future<void> destroyProfile(Session s, {required Future<void> Function() close}) async {
+    await _writeAtomic(_slotsFile, KeySlots.destroySlot(await _slots(), s.slotIndex).encode());
+    try {
+      await close();
+    } catch (_) {
+      // The slot is gone already; a failing close must not keep the files
+    }
+    if (await dir.exists()) {
+      await for (final e in dir.list()) {
+        final name = e.uri.pathSegments.last;
+        if (!name.startsWith(s.profileId)) continue; // the database and its -wal / -shm
+        try {
+          await e.delete();
+        } catch (_) {}
+      }
+    }
+    try {
+      await onProfileDestroyed?.call(s.brambleProfile);
+    } catch (_) {}
   }
 
   Future<void> _profilesDestroyed(String? keep) async {

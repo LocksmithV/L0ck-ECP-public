@@ -2161,6 +2161,288 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'LoRa: {s}'**
   String stLora(String s);
+
+  /// No description provided for @panicButton.
+  ///
+  /// In cs, this message translates to:
+  /// **'PANIC'**
+  String get panicButton;
+
+  /// No description provided for @compromiseButton.
+  ///
+  /// In cs, this message translates to:
+  /// **'KOMPROMITOVÁN'**
+  String get compromiseButton;
+
+  /// No description provided for @confirmCompromise.
+  ///
+  /// In cs, this message translates to:
+  /// **'POTVRDIT: KOMPROMITOVÁN\nodeslat a smazat profil'**
+  String get confirmCompromise;
+
+  /// No description provided for @panicSending.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odesílám…'**
+  String get panicSending;
+
+  /// No description provided for @panicFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'PANIC se nepodařilo odeslat.'**
+  String get panicFailed;
+
+  /// No description provided for @panicSent.
+  ///
+  /// In cs, this message translates to:
+  /// **'PANIC odeslán: {c} kontaktům, {t} týmům'**
+  String panicSent(int c, int t);
+
+  /// No description provided for @panicTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'PANIC A KOMPROMITOVÁN'**
+  String get panicTitle;
+
+  /// No description provided for @panicHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tlačítka na obrazovce PINu fungují bez PINu, dokud aplikace běží za zámkem. PANIC odejde hned všemi kanály najednou, SMS bez potvrzení.'**
+  String get panicHelp;
+
+  /// No description provided for @panicButtonOn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tlačítko PANIC'**
+  String get panicButtonOn;
+
+  /// No description provided for @panicStatus.
+  ///
+  /// In cs, this message translates to:
+  /// **'Stav, který PANIC pošle'**
+  String get panicStatus;
+
+  /// No description provided for @panicText.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vlastní zpráva (nepovinné)'**
+  String get panicText;
+
+  /// No description provided for @panicToContacts.
+  ///
+  /// In cs, this message translates to:
+  /// **'Všem kontaktům'**
+  String get panicToContacts;
+
+  /// No description provided for @panicToTeams.
+  ///
+  /// In cs, this message translates to:
+  /// **'Všem týmům'**
+  String get panicToTeams;
+
+  /// No description provided for @compromiseOn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tlačítko KOMPROMITOVÁN'**
+  String get compromiseOn;
+
+  /// No description provided for @compromiseHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pošle stejným příjemcům stav Kompromitován a pak zničí tento profil stejně jako duress kód. Potvrzuje se druhým tlačítkem nahoře na obrazovce. Duress kód pak otevře návnadu; bez duress kódu už aplikaci nic neotevře.'**
+  String get compromiseHelp;
+
+  /// No description provided for @renameTeam.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přejmenovat tým'**
+  String get renameTeam;
+
+  /// No description provided for @noInternet.
+  ///
+  /// In cs, this message translates to:
+  /// **'bez internetu'**
+  String get noInternet;
+
+  /// No description provided for @secSecurity.
+  ///
+  /// In cs, this message translates to:
+  /// **'Bezpečnost'**
+  String get secSecurity;
+
+  /// No description provided for @secSecuritySub.
+  ///
+  /// In cs, this message translates to:
+  /// **'PIN, duress kód, zamykání, otisk prstu, PANIC'**
+  String get secSecuritySub;
+
+  /// No description provided for @secConnectivity.
+  ///
+  /// In cs, this message translates to:
+  /// **'Konektivita'**
+  String get secConnectivity;
+
+  /// No description provided for @secConnectivitySub.
+  ///
+  /// In cs, this message translates to:
+  /// **'Číslo pro SMS, pořadí PACE, obnova spojení, rádio LoRa'**
+  String get secConnectivitySub;
+
+  /// No description provided for @secApp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Aplikace'**
+  String get secApp;
+
+  /// No description provided for @secAppSub.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přezdívka, jazyk'**
+  String get secAppSub;
+
+  /// No description provided for @pinCodes.
+  ///
+  /// In cs, this message translates to:
+  /// **'PIN a duress kód'**
+  String get pinCodes;
+
+  /// No description provided for @lockTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zamykání'**
+  String get lockTitle;
+
+  /// No description provided for @lockAfter.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zamknout po odchodu z aplikace'**
+  String get lockAfter;
+
+  /// No description provided for @lockNow.
+  ///
+  /// In cs, this message translates to:
+  /// **'Ihned'**
+  String get lockNow;
+
+  /// No description provided for @lockMinutes.
+  ///
+  /// In cs, this message translates to:
+  /// **'Po {n} min'**
+  String lockMinutes(int n);
+
+  /// No description provided for @lockManual.
+  ///
+  /// In cs, this message translates to:
+  /// **'Jen ručně (4 klepnutí)'**
+  String get lockManual;
+
+  /// No description provided for @lockHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Po restartu telefonu nebo aplikace je PIN potřeba vždy.'**
+  String get lockHelp;
+
+  /// No description provided for @quickLockNeeded.
+  ///
+  /// In cs, this message translates to:
+  /// **'Při zamykání jen ručně musí zůstat zapnuté.'**
+  String get quickLockNeeded;
+
+  /// No description provided for @bioTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odemknutí otiskem prstu'**
+  String get bioTitle;
+
+  /// No description provided for @bioHelp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Jen pro návrat do běžícího profilu. PIN je potřeba po restartu, po nouzovém zamknutí a {h} h od posledního zadání PINu. Otisk nemá duress kód.'**
+  String bioHelp(int h);
+
+  /// No description provided for @bioNeedsPanic.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vyžaduje zapnuté tlačítko PANIC i KOMPROMITOVÁN.'**
+  String get bioNeedsPanic;
+
+  /// No description provided for @bioUnavailable.
+  ///
+  /// In cs, this message translates to:
+  /// **'Telefon nemá nastavený otisk prstu.'**
+  String get bioUnavailable;
+
+  /// No description provided for @bioLocksPanic.
+  ///
+  /// In cs, this message translates to:
+  /// **'Při odemykání otiskem musí zůstat zapnuté.'**
+  String get bioLocksPanic;
+
+  /// No description provided for @bioPrompt.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odemknout L0ck-ECP'**
+  String get bioPrompt;
+
+  /// No description provided for @bioUsePin.
+  ///
+  /// In cs, this message translates to:
+  /// **'Použít PIN'**
+  String get bioUsePin;
+
+  /// No description provided for @bioButton.
+  ///
+  /// In cs, this message translates to:
+  /// **'Otisk prstu'**
+  String get bioButton;
+
+  /// No description provided for @chConnected.
+  ///
+  /// In cs, this message translates to:
+  /// **'PŘIPOJENO'**
+  String get chConnected;
+
+  /// No description provided for @chNoLink.
+  ///
+  /// In cs, this message translates to:
+  /// **'BEZ SPOJENÍ'**
+  String get chNoLink;
+
+  /// No description provided for @reportButton.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hlášení'**
+  String get reportButton;
+
+  /// No description provided for @sendTo.
+  ///
+  /// In cs, this message translates to:
+  /// **'Komu poslat'**
+  String get sendTo;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vybrat vše'**
+  String get selectAll;
+
+  /// No description provided for @sendToN.
+  ///
+  /// In cs, this message translates to:
+  /// **'ODESLAT ({n})'**
+  String sendToN(int n);
+
+  /// No description provided for @sentToN.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odesláno: {n} příjemcům'**
+  String sentToN(int n);
+
+  /// No description provided for @noRecipients.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zatím nemáš žádné kontakty ani týmy.'**
+  String get noRecipients;
 }
 
 class _AppLocalizationsDelegate

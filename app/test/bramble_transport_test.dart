@@ -9,6 +9,7 @@ import 'package:l0ck_ecp/data/database.dart';
 import 'package:l0ck_ecp/messaging/bramble_transport.dart';
 import 'package:l0ck_ecp/messaging/messaging_service.dart';
 import 'package:l0ck_ecp/platform/bramble.dart';
+import 'package:l0ck_ecp/platform/net.dart';
 import 'package:l0ck_ecp/security/security_service.dart';
 import 'package:l0ck_ecp/l10n/lang.dart';
 
@@ -146,6 +147,20 @@ void main() {
   test('own card carries the briar link once Bramble runs', () {
     expect(ContactCard.fromUri(alice.myContactUri()).briarLink, 'briar://alice');
     expect(alice.channelStatus, ['Bramble: tor', 'Síť skupiny: 0 v dosahu']);
+  });
+
+  test('no internet and no live link: no ACK wait on Bramble; a Bluetooth link sends it', () async {
+    Net.online.value = false;
+    addTearDown(() => Net.online.value = true);
+    final a = await alice.addContactFromUri(bob.myContactUri()) as ContactAdded;
+    await bob.addContactFromUri(alice.myContactUri());
+    await until(() async => ba.contactLinks.isNotEmpty && bb.contactLinks.isNotEmpty);
+    await alice.sendText(a.contact.id, 'bez sítě');
+    final adb = alice.session.db;
+    await until(() async => (await adb.select(adb.messages).getSingle()).status == 'waiting');
+    ba.link(bb, 'bluetooth', true);
+    await until(() async => (await adb.select(adb.messages).getSingle()).status == 'delivered');
+    expect((await adb.select(adb.messages).getSingle()).via, 'bramble');
   });
 
   test('cards swapped in person become Bramble contacts and a text goes over layer A', () async {

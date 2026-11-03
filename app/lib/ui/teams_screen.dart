@@ -98,6 +98,27 @@ class TeamScreen extends StatefulWidget {
 }
 
 class _TeamScreenState extends State<TeamScreen> {
+  late String _name = widget.team.name;
+
+  Future<void> _rename() async {
+    final name = TextEditingController(text: _name);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: L0ckColors.panel,
+        title: Text(context.l.renameTeam),
+        content: TextField(controller: name, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.l.save)),
+        ],
+      ),
+    );
+    final n = name.text.trim();
+    if (ok != true || n.isEmpty) return;
+    await widget.messaging.renameTeam(widget.team.id, n);
+    if (mounted) setState(() => _name = n);
+  }
   final _text = TextEditingController();
 
   @override
@@ -112,7 +133,7 @@ class _TeamScreenState extends State<TeamScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: L0ckColors.panel,
-        title: Text(context.l.teamQrTitle(widget.team.name)),
+        title: Text(context.l.teamQrTitle(_name)),
         content: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(
@@ -144,7 +165,7 @@ class _TeamScreenState extends State<TeamScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: L0ckColors.panel,
-        title: Text(context.l.leaveTeamQ(widget.team.name)),
+        title: Text(context.l.leaveTeamQ(_name)),
         content: Text(context.l.leaveTeamText),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l.cancel)),
@@ -200,13 +221,14 @@ class _TeamScreenState extends State<TeamScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(widget.team.name), actions: [
+        appBar: AppBar(title: Text(_name), actions: [
           IconButton(tooltip: context.l.members, icon: const Icon(Icons.group), onPressed: _members),
           IconButton(tooltip: context.l.teamQr, icon: const Icon(Icons.qr_code), onPressed: _qr),
           PopupMenuButton<String>(
             color: L0ckColors.panel,
-            onSelected: (_) => _leave(),
+            onSelected: (v) => v == 'rename' ? _rename() : _leave(),
             itemBuilder: (_) => [
+              PopupMenuItem(value: 'rename', child: Text(context.l.renameTeam)),
               PopupMenuItem(value: 'leave', child: Text(context.l.leaveTeamMenu)),
             ],
           ),

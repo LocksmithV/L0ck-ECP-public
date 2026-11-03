@@ -118,4 +118,8 @@ class NativeBramble implements BrambleApi {
   @override
   Future<void> deleteProfilesExcept(String? keep) =>
       _m.invokeMethod('deleteProfiles', {'keep': keep});
+
+  /// One profile's Bramble data only (the PIN screen's "compromised"; see
+  /// SecurityService.destroyProfile).
+  Future<void> deleteProfile(String profile) => _m.invokeMethod('deleteProfile', {'profile': profile});
 }
