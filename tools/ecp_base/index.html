@@ -105,6 +105,10 @@
     text-transform: uppercase; }
   .fld input { color: var(--data); font-size: 15px; }
   .fld input.bad { border-color: var(--red); }
+  /* Password: black dots on white, readable whatever the browser does to the field */
+  .fld input[type=password] { background: #fff; color: #000; -webkit-text-fill-color: #000; caret-color: #000;
+    border-color: var(--green); font-size: 18px; letter-spacing: 3px; }
+  .fld input[type=password]:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #fff inset; }
   .meta { color: var(--dim); font: 12px var(--mono); }
   ul.list li .acts { display: inline-flex; gap: 6px; }
   /* A member's contact card as QR */
