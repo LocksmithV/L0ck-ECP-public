@@ -28,8 +28,22 @@ typedef _FreeD = void Function(Pointer<Void>);
 /// The core's C functions (simplex-chat src/Simplex/Chat/Mobile.hs). Opened per isolate.
 class _Core {
   _Core(String path)
-      : _lib = DynamicLibrary.open(path),
+      : _lib = _open(path),
         _libc = DynamicLibrary.open('libc.so');
+
+  /// The shim first (app/android/simplex/simplex_shim.c): the core resolves the symbols
+  /// Android does not export against it — without it the 32-bit core does not load. Where
+  /// there is no shim (desktop builds) the core alone.
+  static DynamicLibrary _open(String path) {
+    if (path == 'libsimplex.so') {
+      try {
+        return DynamicLibrary.open('libsimplexshim.so');
+      } on ArgumentError {
+        // no shim next to the core
+      }
+    }
+    return DynamicLibrary.open(path);
+  }
 
   final DynamicLibrary _lib, _libc;
   late final hsInit = _lib.lookupFunction<_HsInitN, _HsInitD>('hs_init');

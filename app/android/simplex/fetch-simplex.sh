@@ -26,4 +26,14 @@ if [ ! -f "$apk" ]; then
 fi
 echo "$APK_SHA256  $apk" | sha256sum -c -
 unzip -o -j -q "$apk" "lib/$ABI/libsimplex.so" -d "$out"
-ls -la "$out/libsimplex.so"
+
+# libsimplexshim.so (simplex_shim.c): the symbols the core needs that Android does not
+# export; the app loads it, and the core with it
+ndk=${ANDROID_NDK_HOME:-$HOME/.l0ck-ecp-toolchain/sdk/ndk/28.2.13676358}
+case "$ABI" in
+  arm64-v8a)   cc=aarch64-linux-android26-clang ;;
+  armeabi-v7a) cc=armv7a-linux-androideabi26-clang ;;
+esac
+"$(ls -d "$ndk"/toolchains/llvm/prebuilt/*/bin | head -1)/$cc" -shared -fPIC -O2 -s \
+  -o "$out/libsimplexshim.so" "$here/simplex_shim.c" -L"$out" -lsimplex
+ls -la "$out/libsimplex.so" "$out/libsimplexshim.so"

@@ -5,7 +5,7 @@ import '../l10n/lang.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-const appVersion = '0.3.0';
+const appVersion = '0.3.1';
 const _github = 'https://github.com/LocksmithV';
 const _web = 'https://l0cksm1thv.duckdns.org';
 

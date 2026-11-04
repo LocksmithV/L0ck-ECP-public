@@ -1,7 +1,7 @@
 name: l0ck_ecp
 description: "L0ck-ECP — encrypted emergency coordination over several channels (PACE)."
 publish_to: 'none'
-version: 0.3.0+12
+version: 0.3.1+13
 
 environment:
   sdk: ^3.13.7

@@ -217,6 +217,8 @@ class MessagingService {
   /// a message stuck on a channel that just went down moves on.
   Future<void> networkChanged() async {
     channelsChanged.value++;
+    // SimpleX started offline makes its address now; contacts learn it from the new card
+    if (Net.online.value && (await transport<SimplexAppTransport>()?.networkUp() ?? false)) await _announceCard();
     await router.availabilityChanged(DateTime.now());
   }
 
@@ -731,6 +733,7 @@ class MessagingService {
   /// sms. Returns a short status for the user.
   Future<String> refreshChannel(String which) async {
     final l = Lang.tr;
+    final hadAddress = transport<SimplexAppTransport>()?.ownLink != null;
     final result = switch (which) {
       'simplex' => switch (await transport<SimplexAppTransport>()?.reconnect()) {
           true => l.rcConnectingRelays,
@@ -756,6 +759,8 @@ class MessagingService {
         }(),
       _ => '?',
     };
+    // SimpleX started offline may have made its address just now: contacts need the card
+    if (which == 'simplex' && !hadAddress && transport<SimplexAppTransport>()?.ownLink != null) await _announceCard();
     await router.availabilityChanged(DateTime.now());
     channelsChanged.value++;
     return result;

@@ -54,7 +54,8 @@ class SimplexTransport extends Transport {
   String? get address => _address;
 
   /// Creates the profile on first use, starts the core, makes sure the address exists and
-  /// auto-accepts, and loads the contact list.
+  /// auto-accepts, and loads the contact list. Without a network the address cannot be made
+  /// yet: the transport still starts, and [ensureAddress] gets it later.
   Future<void> start() async {
     Map<String, dynamic> user;
     try {
@@ -73,18 +74,33 @@ class SimplexTransport extends Transport {
     }
     _userId = uid;
     await api.cmd('/_start');
-    Map<String, dynamic> link;
-    try {
-      final r = await api.cmd('/_show_address $uid');
-      link = (r['contactLink'] as Map<String, dynamic>)['connLinkContact'] as Map<String, dynamic>;
-    } on SimplexError {
-      link = (await api.cmd('/_address $uid'))['connLinkContact'] as Map<String, dynamic>;
-    }
-    _address = (link['connShortLink'] ?? link['connFullLink']) as String;
-    final settings = {'businessAddress': false, 'autoAccept': {'acceptIncognito': false}};
-    await api.cmd('/_address_settings $uid ${jsonEncode(settings)}');
     _sub = api.events.listen(_onEvent);
+    await ensureAddress();
     await refreshContacts();
+  }
+
+  /// The own contact address (shown, or created — which needs a relay) with auto-accept on.
+  /// False while it cannot be had (no network); call again when the network is back.
+  Future<bool> ensureAddress() async {
+    final uid = _userId;
+    if (uid == null) return false;
+    if (_address != null) return true;
+    try {
+      Map<String, dynamic> link;
+      try {
+        final r = await api.cmd('/_show_address $uid');
+        link = (r['contactLink'] as Map<String, dynamic>)['connLinkContact'] as Map<String, dynamic>;
+      } on SimplexError {
+        link = (await api.cmd('/_address $uid'))['connLinkContact'] as Map<String, dynamic>;
+      }
+      final settings = {'businessAddress': false, 'autoAccept': {'acceptIncognito': false}};
+      await api.cmd('/_address_settings $uid ${jsonEncode(settings)}');
+      _address = (link['connShortLink'] ?? link['connFullLink']) as String;
+      onChanged?.call(); // the own card now has the SimpleX address
+      return true;
+    } on SimplexError {
+      return false;
+    }
   }
 
   Future<void> refreshContacts() async {
@@ -188,6 +204,7 @@ class SimplexTransport extends Transport {
   Future<bool> reconnect() async {
     try {
       await api.cmd('/reconnect');
+      await ensureAddress();
       await refreshContacts();
       return true;
     } on SimplexError {

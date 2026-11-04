@@ -83,6 +83,10 @@ class SimplexAppTransport extends AppTransport {
 
   Future<bool> reconnect() => _inner.reconnect();
 
+  /// The network is back: the address it could not make before (started offline). True
+  /// when it has just been made — contacts then need the new card.
+  Future<bool> networkUp() async => _inner.address == null && await _inner.ensureAddress();
+
   @override
   Future<void> close() async {
     await _inner.close();

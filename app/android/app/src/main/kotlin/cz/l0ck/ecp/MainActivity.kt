@@ -71,7 +71,17 @@ class MainActivity : FlutterActivity() {
         permissionsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PERMISSIONS).apply {
             setMethodCallHandler { call, result ->
                 if (call.method != "request") return@setMethodCallHandler result.notImplemented()
+                // A permission newer than this Android does not exist here and always reads as
+                // denied (e.g. "Nearby devices" on Android 9, where BLUETOOTH and location cover
+                // it): left out, so it does not block what it guards
+                // Before Android 12, finding Bluetooth devices needs the location permission
+                // instead of BLUETOOTH_SCAN
                 val wanted = call.argument<List<String>>("permissions").orEmpty()
+                    .map {
+                        if (Build.VERSION.SDK_INT < 31 && it == "android.permission.BLUETOOTH_SCAN")
+                            "android.permission.ACCESS_FINE_LOCATION" else it
+                    }
+                    .filter { Build.VERSION.SDK_INT >= (SINCE[it] ?: 0) }
                     .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
                 if (wanted.isEmpty()) return@setMethodCallHandler result.success(true)
                 pendingPermissions?.success(false)
@@ -320,6 +330,14 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         const val PERMISSIONS = "cz.l0ck.ecp/permissions"
+
+        /** Runtime permissions that exist only from a given Android version on. */
+        private val SINCE = mapOf(
+            "android.permission.BLUETOOTH_CONNECT" to 31,
+            "android.permission.BLUETOOTH_SCAN" to 31,
+            "android.permission.BLUETOOTH_ADVERTISE" to 31,
+            "android.permission.POST_NOTIFICATIONS" to 33,
+        )
         const val SCAN = "cz.l0ck.ecp/scan"
         const val BIOMETRIC = "cz.l0ck.ecp/biometric"
         const val REQUEST_DISCOVERABLE = 7301

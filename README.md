@@ -16,7 +16,7 @@ disasters, remote areas, field events, volunteer and rescue teams.
 
 ### Download
 
-The current test build **L0ck-ECP_v0.3.0.apk** is under [Releases](../../releases)
+The current test build **L0ck-ECP_v0.3.1.apk** is under [Releases](../../releases)
 (Android 8.0+, arm64), with its SHA-256 checksum. From 0.3.0 the APK is signed with the
 project's own key; its certificate's SHA-256 fingerprint (check with
 `apksigner verify --print-certs`) is:
@@ -177,7 +177,7 @@ pohromy, odlehlé oblasti, terénní akce, dobrovolnické a záchranné týmy.
 
 ### Stažení
 
-Aktuální testovací sestavení **L0ck-ECP_v0.3.0.apk** je v [Releases](../../releases)
+Aktuální testovací sestavení **L0ck-ECP_v0.3.1.apk** je v [Releases](../../releases)
 (Android 8.0+, arm64). Kontrolní součet SHA-256 je u vydání. Od verze 0.3.0 je APK
 podepsané vlastním klíčem projektu; otisk certifikátu SHA-256 (ověření:
 `apksigner verify --print-certs`):

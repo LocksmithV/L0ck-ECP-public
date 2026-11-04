@@ -39,14 +39,23 @@ Závislosti Dartu jsou zamčené v `pubspec.lock`, knihovny stránky základny v
 `tools/ecp_base/vendor/SHA256SUMS`, `flutter_webrtc` je připnutý na 1.6.2+hotfix.4.
 
 ```bash
+app/android/simplex/fetch-simplex.sh arm64-v8a
+app/android/simplex/fetch-simplex.sh armeabi-v7a
 cd app && dart run build_runner build
-flutter build apk --release --target-platform android-arm64
-sha256sum build/app/outputs/flutter-apk/app-release.apk
+flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64
 ```
 
-32bitové telefony (armeabi-v7a): `app/android/simplex/fetch-simplex.sh armeabi-v7a`
-(jádro SimpleX z `simplex-armv7a.apk`, ověřené SHA-256) a
-`flutter build apk --release --target-platform android-arm` → `L0ck-ECP_vX-armv7.apk`.
+Vzniknou dvě APK, každé jen s knihovnami svého procesoru (`app-arm64-v8a-release.apk`
+≈ 65 MB → `L0ck-ECP_vX.apk`, `app-armeabi-v7a-release.apk` ≈ 73 MB →
+`L0ck-ECP_vX-armv7.apk`). **Vždy s `--split-per-abi`:** Flutter pak bere versionCode
+`1000 × procesor + build` (arm64 2xxx, armv7 1xxx); sestavení bez něj by mělo nižší číslo
+a Android by ho nepustil přes nainstalovanou verzi.
+
+`fetch-simplex.sh` vedle jádra (`libsimplex.so`, z oficiálního APK SimpleX, ověřené
+SHA-256) přeloží `libsimplexshim.so` ze `simplex_shim.c`: symboly, které 32bitové jádro
+čeká od knihovny C, ale Android je neexportuje (vnitřní funkce bionicu, na Androidu 9
+`reallocarray`). Aplikace načte nejdřív tuto knihovnu a jádro s ní; bez ní se 32bitové
+jádro nenačte a SimpleX nefunguje.
 
 ## F-Droid a ověřitelné sestavení (zatím ne)
 

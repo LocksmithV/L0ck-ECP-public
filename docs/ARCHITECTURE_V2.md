@@ -420,6 +420,16 @@ Balíček nese klíče všech týmů, proto jen osobně na základně; stránka 
 `connect-src 'none'`. Shodu formátu hlídá test: `tools/ecp_base/test/bundle_test.js` píše
 fixture, kterou dekóduje `group_bundle_test.dart`.
 
+**0.3.1:** 32bitové telefony (armeabi-v7a, např. Galaxy S5 mini s Androidem 9): jádro
+SimpleX pro ARMv7 čeká od knihovny C symboly, které Android neexportuje (vnitřní funkce
+bionicu, na Androidu 9 `reallocarray`), a bez nich se nenačte. `libsimplexshim.so`
+(`app/android/simplex/simplex_shim.c`) je doplní; aplikace načte ji a jádro jako její
+závislost. SimpleX nastartuje i bez sítě: kontaktní adresu si vytvoří, až se síť objeví
+(nebo po *Obnovit spojení*), a kontaktům pak rozešle novou kartu. Oprávnění: ta, která daná
+verze Androidu nezná („Zařízení v okolí“ před Androidem 12, oznámení před 13), se
+přeskočí; před Androidem 12 se k hledání Bluetooth žádá poloha. APK po procesorech
+(`--split-per-abi`).
+
 **0.3.0:** podpis vlastním klíčem (docs/RELEASE.md). *Kontrolní hlášení*
 (`CheckInConfig`, Nastavení → Bezpečnost): když majitel do zvolené doby (1–24 h) nepotvrdí
 tlačítkem *Jsem v pořádku* na úvodní obrazovce nebo odemknutím PINem, odejde zvolený stav
