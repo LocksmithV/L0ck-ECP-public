@@ -37,6 +37,9 @@ is one scan per phone instead of about ninety mutual scans.
   (arrow keys work too). Phones read the parts in any order.
 - Links can be pasted instead of scanned. Czech and English (CZ | EN switch).
 - Step overview at the top: what is done and what is next.
+- **Save the set-up:** members (with changes), teams with keys, LoRa and PACE go into a
+  file encrypted with a password (step 5), and load back later — e.g. to add a member
+  next week with the same team keys.
 
 ### Use
 
@@ -58,9 +61,13 @@ again.
 
 ### Security
 
-- **Offline and nothing stored.** No server, no account, no browser storage. Everything
-  lives in the open tab's memory; *Erase all* or closing the tab forgets it. A
+- **Offline and nothing stored by itself.** No server, no account, no browser storage.
+  Everything lives in the open tab's memory; *Erase all* or closing the tab forgets it. A
   Content-Security-Policy `connect-src 'none'` stops the page from sending anything.
+- **The saved file** is AES-256-GCM, its key derived from your password by PBKDF2-SHA256
+  with 600,000 rounds and a random salt (WebCrypto). The password (12+ characters) is
+  stored nowhere and cannot be recovered; a wrong password or any change to the file and
+  it does not open. It holds the team keys: keep it on your own encrypted storage.
 - **Team keys** (32 random bytes each) are made in the browser with
   `crypto.getRandomValues`. The base never sees any private key: a contact card holds only
   public keys and addresses.
@@ -81,13 +88,16 @@ again.
 |---|---|
 | `index.html`, `base.js` | the page |
 | `bundle.js` | the bundle and card format (same as `group_bundle.dart`) |
+| `vault.js` | the encrypted set-up file (PBKDF2 + AES-GCM) |
 | `img/` | logo and background (JPEG copy of `docs/images/L0ck-ECP_background.png`) |
 | `vendor/jsQR.js` | QR reading, [jsQR](https://github.com/cozmo/jsQR) 1.4.0, Apache 2.0 (`jsQR.LICENSE`) |
 | `vendor/qrcode.js` | QR drawing, [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4, MIT (licence in the file header) |
 | `vendor/SHA256SUMS` | checksums of the two libraries |
 | `test/bundle_test.js` | encoder test; `--write` refreshes the fixture for the Dart test |
+| `test/vault_test.js` | the saved file opens only with its password |
 
-Tests: `node tools/ecp_base/test/bundle_test.js` and `cd packages/ecp_core && dart test`.
+Tests: `node tools/ecp_base/test/bundle_test.js`, `node tools/ecp_base/test/vault_test.js` and
+`cd packages/ecp_core && dart test`.
 
 ### Licence and author
 
@@ -132,6 +142,9 @@ telefon místo zhruba devadesáti vzájemných.
   (fungují i šipky). Telefony čtou díly v libovolném pořadí.
 - Odkazy jde i vložit místo skenování. Čeština a angličtina (přepínač CZ | EN).
 - Nahoře přehled kroků: co je hotové a co zbývá.
+- **Uložení nastavení:** členové (i s úpravami), týmy s klíči, LoRa a PACE se uloží do
+  souboru zašifrovaného heslem (krok 5) a později zase načtou — třeba když za týden
+  přibude člen a týmy mají zůstat se stejnými klíči.
 
 ### Použití
 
@@ -153,9 +166,13 @@ vytvořit znovu.
 
 ### Bezpečnost
 
-- **Offline a nic neukládá.** Žádný server, účet ani úložiště prohlížeče. Všechno je jen
-  v paměti otevřené karty; *Smazat vše* nebo zavření karty to zapomene. Content-Security-
-  Policy `connect-src 'none'` stránce nedovolí nic odeslat.
+- **Offline a sama nic neukládá.** Žádný server, účet ani úložiště prohlížeče. Všechno je
+  jen v paměti otevřené karty; *Smazat vše* nebo zavření karty to zapomene.
+  Content-Security-Policy `connect-src 'none'` stránce nedovolí nic odeslat.
+- **Uložený soubor** je šifrovaný AES-256-GCM klíčem z hesla přes PBKDF2-SHA256 (600 000
+  kol, náhodná sůl, WebCrypto). Heslo (aspoň 12 znaků) se nikde neukládá a nejde obnovit;
+  se špatným heslem nebo po jakékoli změně se soubor neotevře. Nese klíče týmů: ukládej ho
+  jen na vlastní šifrované úložiště.
 - **Klíče týmů** (každý 32 náhodných bajtů) vznikají v prohlížeči přes
   `crypto.getRandomValues`. Základna nevidí žádný soukromý klíč: kontaktní karta nese jen
   veřejné klíče a adresy.
@@ -175,13 +192,16 @@ vytvořit znovu.
 |---|---|
 | `index.html`, `base.js` | stránka |
 | `bundle.js` | formát balíčku a karty (stejný jako `group_bundle.dart`) |
+| `vault.js` | zašifrovaný soubor s nastavením (PBKDF2 + AES-GCM) |
 | `img/` | logo a pozadí (kopie `docs/images/L0ck-ECP_background.png` v JPEG) |
 | `vendor/jsQR.js` | čtení QR, [jsQR](https://github.com/cozmo/jsQR) 1.4.0, Apache 2.0 (`jsQR.LICENSE`) |
 | `vendor/qrcode.js` | kreslení QR, [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 1.4.4, MIT (licence v hlavičce souboru) |
 | `vendor/SHA256SUMS` | kontrolní součty obou knihoven |
 | `test/bundle_test.js` | test kodéru; `--write` obnoví fixture pro test v Dartu |
+| `test/vault_test.js` | uložený soubor jde otevřít jen svým heslem |
 
-Testy: `node tools/ecp_base/test/bundle_test.js` a `cd packages/ecp_core && dart test`.
+Testy: `node tools/ecp_base/test/bundle_test.js`, `node tools/ecp_base/test/vault_test.js`
+a `cd packages/ecp_core && dart test`.
 
 ### Licence a autor
 

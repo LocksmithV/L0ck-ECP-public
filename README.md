@@ -25,6 +25,9 @@ project's own key; its certificate's SHA-256 fingerprint (check with
 7A:19:E3:4B:A8:0B:DC:19:14:8F:B7:21:47:01:B5:79:D9:67:A0:DB:0B:21:8C:71:F8:7D:9B:F4:FE:17:A4:F0
 ```
 
+Older phones with a 32-bit ARM processor (armeabi-v7a, e.g. Galaxy S5 mini) take the
+`…-armv7.apk` from the same release.
+
 Test builds up to 0.2.3 used a development key: uninstall them before installing 0.3.0
 (the profile on that phone is lost; a group bundle from the base sets it up again).
 
@@ -182,6 +185,9 @@ podepsané vlastním klíčem projektu; otisk certifikátu SHA-256 (ověření:
 ```
 7A:19:E3:4B:A8:0B:DC:19:14:8F:B7:21:47:01:B5:79:D9:67:A0:DB:0B:21:8C:71:F8:7D:9B:F4:FE:17:A4:F0
 ```
+
+Starší telefony s 32bitovým procesorem ARM (armeabi-v7a, např. Galaxy S5 mini) mají
+ve stejném vydání `…-armv7.apk`.
 
 Testovací verze do 0.2.3 měly vývojový klíč: před instalací 0.3.0 je odinstaluj (profil
 v telefonu zanikne; balíček skupiny ze základny ho rychle nastaví znovu).

@@ -115,6 +115,7 @@
     text-align: center; max-width: min(92vw, 560px); }
   .modal h2 { color: var(--data); font-size: 15px; }
   .modal .qrbox { background: #fff; padding: 12px; display: inline-block; margin-bottom: 10px; }
+  .modal .pw { display: grid; gap: 10px; text-align: left; margin: 6px 0; min-width: min(80vw, 360px); }
   .modal canvas { display: block; width: min(60vh, 80vw, 420px); height: auto; image-rendering: pixelated; }
   ul.list { list-style: none; margin: 0; padding: 0; }
   ul.list li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(45, 74, 30, .35); }
@@ -137,7 +138,7 @@
   #qr canvas { display: block; width: min(70vh, 86vw); height: auto; image-rendering: pixelated; }
   #part { font: 700 28px var(--mono); color: var(--orange); letter-spacing: 3px; }
   /* Step overview under the header: what is done, what is next */
-  nav.steps { position: sticky; top: 85px; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr);
+  nav.steps { position: sticky; top: 85px; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr);
     max-width: 1100px; margin: 0 auto; gap: 6px; padding: 10px 16px 0; }
   nav.steps a { display: block; text-decoration: none; font: 12px var(--mono); letter-spacing: 1px; color: var(--dim);
     background: rgba(10, 12, 9, .9); border: 1px solid var(--border); border-top: 3px solid var(--border); padding: 6px 10px; }
@@ -181,6 +182,7 @@
   <a href="#s2" id="st2"><b>2</b><span data-t="s2"></span><span class="st"></span></a>
   <a href="#s3" id="st3"><b>3</b><span data-t="s3"></span><span class="st"></span></a>
   <a href="#s4" id="st4"><b>4</b><span data-t="s4"></span><span class="st"></span></a>
+  <a href="#s5" id="st5"><b>5</b><span data-t="s5"></span><span class="st"></span></a>
 </nav>
 
 <main>
@@ -257,6 +259,18 @@
       <p class="help" id="sizeInfo"></p>
     </div>
   </section>
+
+  <section id="s5">
+    <h2><b>5</b><span data-t="s5"></span></h2>
+    <p class="help" data-t="s5help"></p>
+    <div class="row">
+      <button class="main" id="save" data-t="saveSetup"></button>
+      <button id="load" data-t="loadSetup"></button>
+      <input type="file" id="loadFile" accept=".l0ckbase,application/json" hidden>
+    </div>
+    <div class="okmsg" id="vaultOk"></div>
+    <div class="err" id="vaultErr"></div>
+  </section>
 </main>
 <footer>
   <div class="ready"><b>READY</b> · SECURE · COORDINATE</div>
@@ -280,7 +294,24 @@
 
 <script src="vendor/jsQR.js"></script>
 <script src="vendor/qrcode.js"></script>
+<div class="modal" id="pwModal" hidden>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <h2 id="pwTitle" data-t="pwTitle"></h2>
+    <p class="help" id="pwHelp"></p>
+    <div class="pw">
+      <label class="fld"><span data-t="pw"></span><input type="password" id="pw1" autocomplete="new-password"></label>
+      <label class="fld" id="pw2Row"><span data-t="pwAgain"></span><input type="password" id="pw2" autocomplete="new-password"></label>
+    </div>
+    <div class="err" id="pwErr"></div>
+    <div class="row" style="justify-content:center">
+      <button id="pwCancel" data-t="cancel"></button>
+      <button class="main" id="pwOk"></button>
+    </div>
+  </div>
+</div>
+
 <script src="bundle.js"></script>
+<script src="vault.js"></script>
 <script src="base.js"></script>
 </body>
 </html>

@@ -44,6 +44,10 @@ flutter build apk --release --target-platform android-arm64
 sha256sum build/app/outputs/flutter-apk/app-release.apk
 ```
 
+32bitové telefony (armeabi-v7a): `app/android/simplex/fetch-simplex.sh armeabi-v7a`
+(jádro SimpleX z `simplex-armv7a.apk`, ověřené SHA-256) a
+`flutter build apk --release --target-platform android-arm` → `L0ck-ECP_vX-armv7.apk`.
+
 ## F-Droid a ověřitelné sestavení (zatím ne)
 
 F-Droid sestavuje vše ze zdrojů. Překážky:

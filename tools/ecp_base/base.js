@@ -10,7 +10,7 @@ const T = {
   cs: {
     title: 'Základna · hromadné nastavení skupiny',
     wipe: 'Smazat vše',
-    intro: 'Funguje bez internetu, nic neukládá. Postup: načti kontaktní QR všech telefonů, založ týmy, pak ukaž balíček skupiny a každý telefon ho načte v aplikaci (Kontakty → ikona skeneru → Načíst balíček skupiny).',
+    intro: 'Funguje bez internetu a sama nic neukládá; uložit jde jen na tvůj pokyn do souboru zašifrovaného heslem (krok 5). Postup: načti kontaktní QR všech telefonů, založ týmy, pak ukaž balíček skupiny a každý telefon ho načte v aplikaci (Kontakty → ikona skeneru → Načíst balíček skupiny).',
     s1: 'Členové',
     s1help: 'Na každém telefonu otevři Můj kontakt a podrž QR před kamerou. Odkaz jde i vložit.',
     camStart: 'Zapnout kameru', camStop: 'Vypnout kameru',
@@ -54,6 +54,21 @@ const T = {
     needName: 'Každý tým potřebuje název (nejvýš 40 B).',
     needTeamMember: (t) => `Tým „${t}“ nemá žádného člena.`,
     wipeAsk: 'Smazat všechny načtené kontakty, týmy a klíče z této stránky?',
+    s5: 'Uložit nastavení',
+    s5help: 'Celé nastavení – členové i s úpravami, týmy s klíči, kanál LoRa a pořadí PACE – jde uložit do souboru zašifrovaného heslem a později zase načíst. Šifra AES-256-GCM, klíč z hesla přes PBKDF2-SHA256 (600 000 kol). Heslo se nikde neukládá; bez něj soubor nikdo neotevře. Soubor nese klíče týmů: ukládej ho jen na vlastní šifrované úložiště.',
+    saveSetup: 'Uložit zašifrovaně', loadSetup: 'Načíst ze souboru',
+    pwTitle: 'Heslo k souboru', pw: 'Heslo', pwAgain: 'Heslo znovu', cancel: 'Zrušit', ok: 'OK',
+    pwSaveHelp: 'Nejméně 12 znaků. Bez něj soubor nepůjde otevřít a heslo nejde obnovit.',
+    pwLoadHelp: 'Heslo, kterým byl soubor uložen.',
+    pwShort: 'Heslo musí mít aspoň 12 znaků.', pwMismatch: 'Hesla se neshodují.',
+    working: 'Šifruji…',
+    vaultSaved: (n) => `Uloženo do ${n}.`,
+    vaultLoaded: (m, tm) => `Načteno: ${cz(m, 'člen', 'členové', 'členů')}, ${cz(tm, 'tým', 'týmy', 'týmů')}.`,
+    vaultBadFile: 'Tohle není soubor s nastavením základny.',
+    vaultBadPassword: 'Špatné heslo, nebo je soubor poškozený.',
+    vaultReplace: 'Načtení nahradí to, co je teď na stránce. Pokračovat?',
+    vaultNoCrypto: 'Prohlížeč tu nemá šifrování (WebCrypto). Otevři stránku přes http://127.0.0.1 (viz README).',
+    stSaved: (hm) => `uloženo ${hm}`, stNotSaved: 'neuloženo',
     author: 'autor',
     stMembers: (n) => (n ? cz(n, 'telefon', 'telefony', 'telefonů') : 'nikdo'),
     stTeams: (n) => (n ? cz(n, 'tým', 'týmy', 'týmů') : 'bez týmů'),
@@ -63,7 +78,7 @@ const T = {
   en: {
     title: 'Base · group setup',
     wipe: 'Erase all',
-    intro: 'Works without internet and stores nothing. Steps: scan every phone\'s contact QR, set up teams, then show the group bundle; each phone loads it in the app (Contacts → scanner icon → Load group bundle).',
+    intro: 'Works without internet and stores nothing by itself; only on your word into a file encrypted with a password (step 5). Steps: scan every phone\'s contact QR, set up teams, then show the group bundle; each phone loads it in the app (Contacts → scanner icon → Load group bundle).',
     s1: 'Members',
     s1help: 'On each phone open My contact and hold its QR up to the camera. A link can be pasted too.',
     camStart: 'Start camera', camStop: 'Stop camera',
@@ -107,6 +122,21 @@ const T = {
     needName: 'Every team needs a name (at most 40 B).',
     needTeamMember: (t) => `Team "${t}" has no members.`,
     wipeAsk: 'Erase every scanned contact, team and key from this page?',
+    s5: 'Save the set-up',
+    s5help: 'The whole set-up — members with any changes, teams with their keys, the LoRa channel and the PACE order — can be saved to a file encrypted with a password and loaded later. Cipher AES-256-GCM, key from the password by PBKDF2-SHA256 (600,000 rounds). The password is stored nowhere; without it nobody opens the file. The file carries the team keys: keep it on your own encrypted storage only.',
+    saveSetup: 'Save encrypted', loadSetup: 'Load from a file',
+    pwTitle: 'Password for the file', pw: 'Password', pwAgain: 'Password again', cancel: 'Cancel', ok: 'OK',
+    pwSaveHelp: 'At least 12 characters. Without it the file cannot be opened, and it cannot be recovered.',
+    pwLoadHelp: 'The password the file was saved with.',
+    pwShort: 'The password needs at least 12 characters.', pwMismatch: 'The passwords differ.',
+    working: 'Encrypting…',
+    vaultSaved: (n) => `Saved to ${n}.`,
+    vaultLoaded: (m, tm) => `Loaded: ${m} members, ${tm} teams.`,
+    vaultBadFile: 'This is not a base set-up file.',
+    vaultBadPassword: 'Wrong password, or the file is damaged.',
+    vaultReplace: 'Loading replaces what is on the page now. Go on?',
+    vaultNoCrypto: 'The browser has no encryption here (WebCrypto). Open the page via http://127.0.0.1 (see README).',
+    stSaved: (hm) => `saved ${hm}`, stNotSaved: 'not saved',
     author: 'author',
     stMembers: (n) => (n === 1 ? '1 phone' : n ? `${n} phones` : 'nobody'),
     stTeams: (n) => (n === 1 ? '1 team' : n ? `${n} teams` : 'no teams'),
@@ -127,6 +157,7 @@ const state = {
   pace: [0, 1, 2, 3],
   parts: null,
   shown: 0,
+  savedAt: null, // when the set-up was last saved, unchanged since
 };
 
 // --- rendering ---
@@ -246,11 +277,13 @@ function renderSteps() {
     [t('stTeams', state.teams.length), state.teams.length > 0],
     [t('stPace', state.paceOn), state.paceOn],
     [t('stBundle', state.parts ? state.parts.length : 0), !!state.parts],
+    [state.savedAt ? t('stSaved', hm(state.savedAt)) : t('stNotSaved'), !!state.savedAt],
   ];
   steps.forEach(([text, done], i) => {
     const a = $(`st${i + 1}`);
     a.querySelector('.st').textContent = text;
     a.className = i === 3 && done ? 'ready' : done ? 'done' : '';
+    if (i === 4) a.hidden = !state.members.length && !state.savedAt;
   });
 }
 
@@ -264,9 +297,12 @@ function render() {
   renderBundle();
 }
 
-/** Anything changed: the bundle on screen no longer matches. */
+const hm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+/** Anything changed: the bundle on screen no longer matches, nor does a saved file. */
 function invalidate() {
   state.parts = null;
+  state.savedAt = null;
   setAuto(false);
   renderBundle();
 }
@@ -551,6 +587,131 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') $('next').click();
   if (e.key === 'ArrowLeft') $('prev').click();
 });
+// --- saving and loading the set-up (vault.js) ---
+
+/** The whole set-up as plain data for the encrypted file. */
+function setupData() {
+  return {
+    members: state.members.map((m) => EcpVault.b64(m.bytes)),
+    teams: state.teams.map((tm) => ({ name: tm.name, key: EcpVault.b64(tm.key), members: [...tm.members] })),
+    lora: state.lora,
+    paceOn: state.paceOn,
+    pace: state.pace,
+  };
+}
+
+/** Puts a loaded set-up on the page; every card and key is checked first. */
+function applySetup(d) {
+  const members = (d.members || []).map((b) => EcpBundle.parseCard('l0ck://c/' + EcpBundle.b64urlEncode(EcpVault.unb64(b))));
+  const keys = new Set(members.map((m) => m.key));
+  const teams = (d.teams || []).map((tm) => {
+    const key = EcpVault.unb64(tm.key);
+    if (key.length !== 32) throw new Error('format');
+    return { name: String(tm.name || ''), key, members: new Set((tm.members || []).filter((k) => keys.has(k))) };
+  });
+  const pace = Array.isArray(d.pace) && d.pace.length === 4 && new Set(d.pace).size === 4 && d.pace.every((p) => p >= 0 && p <= 3)
+    ? d.pace : [0, 1, 2, 3];
+  for (const tm of state.teams) tm.key.fill(0);
+  Object.assign(state, {
+    members, teams, pace,
+    lora: Number.isInteger(d.lora) && d.lora >= 0 && d.lora < teams.length ? d.lora : -1,
+    paceOn: !!d.paceOn,
+  });
+}
+
+function vaultSay(ok, err) {
+  $('vaultOk').textContent = ok || '';
+  $('vaultErr').textContent = err || '';
+}
+
+/** The password dialog; resolves with the password, or null when cancelled. */
+function askPassword(saving) {
+  return new Promise((resolve) => {
+    $('pwHelp').textContent = t(saving ? 'pwSaveHelp' : 'pwLoadHelp');
+    $('pw2Row').hidden = !saving;
+    $('pwOk').textContent = t(saving ? 'saveSetup' : 'ok');
+    $('pw1').value = $('pw2').value = '';
+    $('pwErr').textContent = '';
+    $('pwModal').hidden = false;
+    $('pw1').focus();
+    const done = (value) => {
+      $('pwModal').hidden = true;
+      $('pw1').value = $('pw2').value = '';
+      $('pwOk').onclick = $('pwCancel').onclick = $('pw1').onkeydown = $('pw2').onkeydown = null;
+      resolve(value);
+    };
+    $('pwOk').onclick = () => {
+      const p = $('pw1').value;
+      if (saving && p.length < EcpVault.MIN_PASSWORD) return ($('pwErr').textContent = t('pwShort'));
+      if (saving && p !== $('pw2').value) return ($('pwErr').textContent = t('pwMismatch'));
+      done(p);
+    };
+    $('pwCancel').onclick = () => done(null);
+    $('pw1').onkeydown = $('pw2').onkeydown = (e) => {
+      if (e.key === 'Enter') $('pwOk').click();
+      if (e.key === 'Escape') done(null);
+    };
+  });
+}
+
+function cryptoReady() {
+  if (globalThis.crypto && crypto.subtle) return true;
+  vaultSay(null, t('vaultNoCrypto'));
+  return false;
+}
+
+async function saveSetup() {
+  vaultSay();
+  if (!cryptoReady()) return;
+  const password = await askPassword(true);
+  if (password == null) return;
+  vaultSay(t('working'));
+  const text = await EcpVault.seal(setupData(), password);
+  const d = new Date();
+  const name = `l0ck-ecp-zakladna-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${hm(d).replace(':', '')}.l0ckbase`;
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
+  const a = el('a', { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  state.savedAt = d;
+  vaultSay(t('vaultSaved', name));
+  renderSteps();
+}
+
+async function loadSetup(file) {
+  vaultSay();
+  if (!file || !cryptoReady()) return;
+  const text = await file.text();
+  const password = await askPassword(false);
+  if (password == null) return;
+  let data;
+  try {
+    vaultSay(t('working'));
+    data = await EcpVault.open(text, password);
+  } catch (e) {
+    return vaultSay(null, t(e.message === 'format' ? 'vaultBadFile' : 'vaultBadPassword'));
+  }
+  if ((state.members.length || state.teams.length) && !confirm(t('vaultReplace'))) return vaultSay();
+  try {
+    applySetup(data);
+  } catch (_) {
+    return vaultSay(null, t('vaultBadFile'));
+  }
+  changed();
+  state.savedAt = new Date(); // the page now matches that file
+  vaultSay(t('vaultLoaded', state.members.length, state.teams.length));
+  renderSteps();
+}
+
+$('save').onclick = saveSetup;
+$('load').onclick = () => $('loadFile').click();
+$('loadFile').onchange = () => {
+  loadSetup($('loadFile').files[0]);
+  $('loadFile').value = '';
+};
+
 $('wipe').onclick = () => {
   if (!confirm(t('wipeAsk'))) return;
   stopCamera();
